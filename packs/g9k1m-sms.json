@@ -1,0 +1,568 @@
+{
+ "format": "SurePower.FieldBook.Pack.v1",
+ "id": "g9k1m-sms",
+ "family": "Toshiba trailers",
+ "title": "G9K1M SMS Startup Checklist",
+ "subtitle": "Toshiba G9000 1000kVA SMS",
+ "kind": "startup",
+ "packVersion": "1.0.0",
+ "packDate": "2026-10-26",
+ "source": "Toshiba Checklists Master File v1.3.0 (2026-10-05), SHA-256 5df1efb48a3084c21aa5d87c169a10c182721831c4989c7dde2bf207b9ceb6b9 — content extracted by script, not retyped",
+ "ppe": "PPE REQUIRED: SAFETY GLASSES, EH SAFETY BOOTS, PROPER GLOVES, AND FLAME-RESISTANT UNIFORM",
+ "certText": "By checking this box, I certify all checks were completed. Unchecked items must be explained in the Notes section.",
+ "sections": [
+  {
+   "num": 1,
+   "title": "Control Power Checks",
+   "items": [
+    {
+     "line": 1,
+     "text": "Visually inspect UPS for shipping damage; check air filters and replace if needed"
+    },
+    {
+     "line": 2,
+     "text": "Verify UPS internal control and power wiring"
+    },
+    {
+     "line": 3,
+     "text": "Verify PCB boards and connectors"
+    },
+    {
+     "line": 4,
+     "text": "Verify AC and DC capacitors"
+    },
+    {
+     "line": 5,
+     "text": "Inspect batteries: straps, leaks, bulging, cracks, corrosion"
+    },
+    {
+     "line": 6,
+     "text": "Verify no DC voltage to ground on each battery string; check all battery string fuses for continuity"
+    },
+    {
+     "line": 7,
+     "text": "Verify nominal DC voltage at each Anderson connector (typically 515 VDC)"
+    },
+    {
+     "line": 8,
+     "text": "Connect Anderson connectors for each string (typically six unless de-rated); verify each battery string DC voltage at the battery fuses"
+    },
+    {
+     "line": 9,
+     "text": "Apply house power, UPS and bypass; verify clockwise phase rotation"
+    },
+    {
+     "line": 10,
+     "text": "Change circuit-breaker settings to minimum on RIB, BIB, MBB and MIB"
+    },
+    {
+     "line": 11,
+     "text": "Close RIB and BIB; keep MBB and MIB open"
+    }
+   ],
+   "photo": true,
+   "cert": true
+  },
+  {
+   "num": 2,
+   "title": "Test Mode — Control Data Settings",
+   "items": [
+    {
+     "line": 12,
+     "text": "Battery AH (actual installed battery capacity)"
+    },
+    {
+     "line": 13,
+     "text": "Battery Charge Rate 1 / Rate 2"
+    },
+    {
+     "line": 14,
+     "text": "Battery Float Voltage"
+    },
+    {
+     "line": 15,
+     "text": "BAT Final Volts 1 / 2 — Utility Power"
+    },
+    {
+     "line": 16,
+     "text": "BAT Final Volts 1 / 2 — Generator, no utility, under 10% load"
+    },
+    {
+     "line": 17,
+     "text": "BAT Final Warning Voltage 1 / 2"
+    },
+    {
+     "line": 18,
+     "text": "CNV start delay"
+    },
+    {
+     "line": 19,
+     "text": "Inhibit Transfer (BYP VOL OUT RNG)"
+    },
+    {
+     "line": 20,
+     "text": "System Select"
+    },
+    {
+     "line": 21,
+     "text": "SYNC Range"
+    },
+    {
+     "line": 22,
+     "text": "Slew Rate"
+    },
+    {
+     "line": 23,
+     "text": "Output Voltage Adjust"
+    },
+    {
+     "line": 24,
+     "text": "Float Volt Adjust"
+    },
+    {
+     "line": 25,
+     "text": "IR Compensation"
+    },
+    {
+     "line": 26,
+     "text": "Power Demand 1"
+    },
+    {
+     "line": 27,
+     "text": "Power Demand 2"
+    },
+    {
+     "line": 28,
+     "text": "Bypass Abnormal Alarm"
+    },
+    {
+     "line": 29,
+     "text": "Ground Fault"
+    },
+    {
+     "line": 30,
+     "text": "Detection Timer Minor / Major"
+    }
+   ],
+   "photo": true,
+   "cert": true
+  },
+  {
+   "num": 3,
+   "title": "UPS Checks — Setup 2 / Super Setup",
+   "items": [
+    {
+     "line": 31,
+     "text": "Input Frequency and Output Frequency"
+    },
+    {
+     "line": 32,
+     "text": "Battery Equalizing Charge System"
+    },
+    {
+     "line": 33,
+     "text": "Equalizing Charge Voltage"
+    },
+    {
+     "line": 34,
+     "text": "Equalizing Charge Time"
+    },
+    {
+     "line": 35,
+     "text": "Parameter 046 — enable battery self-check"
+    },
+    {
+     "line": 36,
+     "text": "Parameter 047 — self-check standby time"
+    },
+    {
+     "line": 37,
+     "text": "Parameter 048 — self-check cycle period"
+    },
+    {
+     "line": 38,
+     "text": "Parameter 239 — enable input amps on display"
+    },
+    {
+     "line": 39,
+     "text": "Parameter 285 — record additional trace data"
+    },
+    {
+     "line": 40,
+     "text": "Verify pre-charge via test mode on all three sections"
+    },
+    {
+     "line": 41,
+     "text": "Verify test pulses with pre-charge voltages on all three sections"
+    }
+   ],
+   "photo": true,
+   "cert": true
+  },
+  {
+   "num": 4,
+   "title": "Maintenance Mode, Software and Functional Tests",
+   "items": [
+    {
+     "line": 42,
+     "text": "Verify KVA is set to the ordered KVA & circuit-breaker trip settings match KVA"
+    },
+    {
+     "line": 43,
+     "text": "Record Control / SH Bypass software version"
+    },
+    {
+     "line": 44,
+     "text": "Record Control / SH UPS software versions for all three sections"
+    },
+    {
+     "line": 45,
+     "text": "Record FPGA UPS/Bypass software version"
+    },
+    {
+     "line": 46,
+     "text": "Record LCD display software version"
+    },
+    {
+     "line": 47,
+     "text": "Record setup-file software version"
+    },
+    {
+     "line": 48,
+     "text": "Record UP1 board versions for bypass and UPS sections"
+    },
+    {
+     "line": 49,
+     "text": "Start converter/inverter on all three sections & Verify voltages and currents; perform test transfers"
+    },
+    {
+     "line": 50,
+     "text": "With UPS on inverter, test REPO and verify shutdown then Reset static bypass (EMB), then restart UPS"
+    },
+    {
+     "line": 51,
+     "text": "Simulate and reset a Major Fault"
+    },
+    {
+     "line": 52,
+     "text": "Simulate and reset an OL fault"
+    },
+    {
+     "line": 53,
+     "text": "Simulate an input failure for one minute & Verify battery recharge"
+    },
+    {
+     "line": 54,
+     "text": "Collect trace data: battery operation, return, OL, bypass supply, inverter supply"
+    },
+    {
+     "line": 55,
+     "text": "Review UPS event history and battery logs"
+    },
+    {
+     "line": 56,
+     "text": "Review cellular alarm history and verify alarm notification"
+    },
+    {
+     "line": 57,
+     "text": "Update date, time and time zone"
+    }
+   ],
+   "photo": true,
+   "cert": true
+  },
+  {
+   "num": 5,
+   "title": "HVAC Startup Checks",
+   "items": [
+    {
+     "line": 58,
+     "text": "Seasonal/applicability conditions reviewed"
+    },
+    {
+     "line": 59,
+     "text": "Perform checks on each HVAC unit, one at a time"
+    },
+    {
+     "line": 60,
+     "text": "Visually inspect HVAC unit and replace air filters as needed"
+    },
+    {
+     "line": 61,
+     "text": "Inspect HVAC controller, PCBs and terminal connections"
+    },
+    {
+     "line": 62,
+     "text": "Force and verify cooling mode & Verify outdoor fan starts with compressor"
+    },
+    {
+     "line": 63,
+     "text": "Verify hot air exits front of outdoor unit while fan runs"
+    },
+    {
+     "line": 64,
+     "text": "Verify no HVAC controller alarms in cooling mode"
+    },
+    {
+     "line": 65,
+     "text": "Verify exterior HVAC lines do not ice in cooling mode"
+    },
+    {
+     "line": 66,
+     "text": "Return HVAC to automatic operation"
+    },
+    {
+     "line": 67,
+     "text": "Force and verify heating mode & Verify heating indication and no controller alarms"
+    },
+    {
+     "line": 68,
+     "text": "Verify indoor vents blow hot air"
+    },
+    {
+     "line": 69,
+     "text": "Return controller setpoints to normal operation"
+    },
+    {
+     "line": 70,
+     "text": "HVAC startup checks complete"
+    }
+   ],
+   "photo": true,
+   "cert": true
+  },
+  {
+   "num": 6,
+   "title": "HVAC Setpoints",
+   "items": [
+    {
+     "line": 71,
+     "text": "SP — Cooling setpoint / DB — Cooling/heating deadband"
+    },
+    {
+     "line": 72,
+     "text": "Blower Settings (Both, Lead, None) CFAN FRONT / CFAN REAR"
+    },
+    {
+     "line": 73,
+     "text": "DEG — Temperature units"
+    },
+    {
+     "line": 74,
+     "text": "ALT — Alternating lead/lag / LLCO Lead/Lag Change over"
+    },
+    {
+     "line": 75,
+     "text": "HP — Heat-pump logic"
+    },
+    {
+     "line": 76,
+     "text": "CBD5 — Both blowers if delta T >5F"
+    },
+    {
+     "line": 77,
+     "text": "OFDE — Lead/lag off-delay"
+    },
+    {
+     "line": 78,
+     "text": "CRUN — Minimum compressor runtime"
+    },
+    {
+     "line": 79,
+     "text": "LOAL — Low-temperature alarm"
+    },
+    {
+     "line": 80,
+     "text": "HAL1 — High-temperature alarm 1"
+    },
+    {
+     "line": 81,
+     "text": "LOCD — Controller lock"
+    },
+    {
+     "line": 82,
+     "text": "ISD2 — Stage 1 to 2"
+    },
+    {
+     "line": 83,
+     "text": "ISD3 — Stage 2 to 3"
+    },
+    {
+     "line": 84,
+     "text": "CSON — Cooling on differential"
+    },
+    {
+     "line": 85,
+     "text": "CSOFF — Cooling off differential"
+    },
+    {
+     "line": 86,
+     "text": "HS00 — Heating differential"
+    },
+    {
+     "line": 87,
+     "text": "COPR — Compressor stages"
+    },
+    {
+     "line": 88,
+     "text": "OBSD — On-board sensor deviation"
+    }
+   ],
+   "photo": true,
+   "cert": true
+  },
+  {
+   "num": 7,
+   "title": "Critical Load Transfer",
+   "items": [
+    {
+     "line": 89,
+     "text": "Coordinate critical-load transfer with customer"
+    },
+    {
+     "line": 90,
+     "text": "Place load on external maintenance bypass; verify Kirk-key operation"
+    },
+    {
+     "line": 91,
+     "text": "Place load on internal static bypass"
+    },
+    {
+     "line": 92,
+     "text": "Place load on inverter"
+    },
+    {
+     "line": 93,
+     "text": "Record all critical load and UPS data through UPS display"
+    }
+   ],
+   "warning": "STOP — DISCUSS CRITICAL LOAD TRANSFER WITH THE CUSTOMER",
+   "photo": true,
+   "cert": true
+  },
+  {
+   "num": 8,
+   "title": "UPS Display Analog Data",
+   "readings": [
+    {
+     "group": "UPS INPUT",
+     "fields": [
+      {
+       "label": "Voltage ØA",
+       "unit": "VAC"
+      },
+      {
+       "label": "Voltage ØB",
+       "unit": "VAC"
+      },
+      {
+       "label": "Voltage ØC",
+       "unit": "VAC"
+      },
+      {
+       "label": "Input Current",
+       "unit": "AAC"
+      }
+     ]
+    },
+    {
+     "group": "BYPASS INPUT",
+     "fields": [
+      {
+       "label": "Voltage ØA",
+       "unit": "VAC"
+      },
+      {
+       "label": "Voltage ØB",
+       "unit": "VAC"
+      },
+      {
+       "label": "Voltage ØC",
+       "unit": "VAC"
+      }
+     ]
+    },
+    {
+     "group": "UPS OUTPUT",
+     "fields": [
+      {
+       "label": "Voltage ØA",
+       "unit": "VAC"
+      },
+      {
+       "label": "Voltage ØB",
+       "unit": "VAC"
+      },
+      {
+       "label": "Voltage ØC",
+       "unit": "VAC"
+      },
+      {
+       "label": "Current ØA",
+       "unit": "AAC"
+      },
+      {
+       "label": "Current ØB",
+       "unit": "AAC"
+      },
+      {
+       "label": "Current ØC",
+       "unit": "AAC"
+      }
+     ]
+    },
+    {
+     "group": "DC FLOAT / LOAD",
+     "fields": [
+      {
+       "label": "DC Voltage",
+       "unit": "VDC"
+      },
+      {
+       "label": "DC Current",
+       "unit": "ADC"
+      },
+      {
+       "label": "Load",
+       "unit": "kVA"
+      },
+      {
+       "label": "Load",
+       "unit": "kW"
+      }
+     ]
+    }
+   ],
+   "photo": true,
+   "cert": false
+  },
+  {
+   "num": 9,
+   "title": "Modbus Setup and Verification",
+   "items": [
+    {
+     "line": 94,
+     "text": "Record RemotEye firmware (1.18 or higher)"
+    },
+    {
+     "line": 95,
+     "text": "Record Sentinel Pro firmware (1.8.22 or higher)"
+    },
+    {
+     "line": 96,
+     "text": "Verify Sentinel Pro is online and notifications are programmed"
+    },
+    {
+     "line": 97,
+     "text": "Verify UPS online with no alarms"
+    },
+    {
+     "line": 98,
+     "text": "Record all critical load and UPS data through Sensaphone web page and save screenshot"
+    }
+   ],
+   "photo": true,
+   "cert": true
+  }
+ ]
+}

@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FieldBook</title>
+<meta name="theme-color" content="#111820">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FieldBook">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<style>
+/* Sure Power FieldBook. Offline field app: one job = Work Order + checklists + photos, sent as one PDF + one CSV. */
+:root{
+  --bg:#eceff2; --plate:#fff; --steel:#e1e5ea; --line:#c9d0d8; --ink:#15191e; --muted:#58626d;
+  --head:#111820; --head-2:#232c36; --head-fg:#f3f5f7; --head-muted:#a7b1bc;
+  --red:#b51f24; --red-2:#6f1115; --red-bg:#fbe9e9; --amber:#a86a00; --amber-bg:#fdf1dc;
+  --ok:#22764a; --ok-bg:#e3f2e9; --info:#1d5fa8; --info-bg:#e6eef8; --bad:#b3261e; --bad-bg:#fbe5e3;
+  --f-display:"Barlow Condensed","Roboto Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:-apple-system,system-ui,"Segoe UI",Roboto,sans-serif;
+  --f-mono:ui-monospace,"SF Mono","Roboto Mono",Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e1215; --plate:#171c21; --steel:#222a32; --line:#2e3842; --ink:#e6eaee; --muted:#9aa4ae;
+  --head:#07090b; --head-2:#1b222a; --head-fg:#eef1f4; --head-muted:#95a0ab;
+  --red:#e5484e; --red-2:#8f1a1f; --red-bg:#3a1517; --amber:#e2a53c; --amber-bg:#33260f;
+  --ok:#5cc28a; --ok-bg:#14291e; --info:#6ea8ea; --info-bg:#172638; --bad:#f08a80; --bad-bg:#3a1714; color-scheme:dark}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-body);padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+.wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{background:var(--head);color:var(--head-fg);padding-top:env(safe-area-inset-top,0px);position:sticky;top:0;z-index:6;border-bottom:3px solid var(--red)}
+header.top .wrap{padding-block:10px;display:flex;align-items:center;gap:10px}
+header.top h1{margin:0;font:700 24px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.02em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.top h1 span{color:var(--red)}
+header.top h1 small{display:block;font:500 11px var(--f-mono);letter-spacing:.1em;color:var(--head-muted);text-transform:uppercase}
+.hbtn{background:var(--head-2);color:var(--head-fg);border:0;border-radius:8px;padding:8px 12px;font-weight:600;font-size:15px;min-height:40px;cursor:pointer;white-space:nowrap}
+main .wrap{padding-block:14px;display:grid;gap:12px}
+.card{background:var(--plate);border:1px solid var(--line);border-radius:10px;padding:12px;display:grid;gap:10px;min-width:0}
+.card h2{margin:0;font:600 21px var(--f-display);text-transform:uppercase}
+.muted{color:var(--muted)} .small{font-size:13.5px}
+.btn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:8px;padding:10px 14px;font-weight:600;font-size:15px;cursor:pointer;min-height:44px;text-align:center}
+.btn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.btn.red{background:var(--red);color:#fff} .btn.ok{background:var(--ok);color:#fff}
+.btn.ghost{background:var(--plate);border:1px solid var(--line)} .btn.bad{background:transparent;border:1px solid var(--bad);color:var(--bad)}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.empty{background:var(--plate);border:1px dashed var(--line);border-radius:10px;padding:24px 16px;text-align:center;color:var(--muted);display:grid;gap:6px}
+.empty b{color:var(--ink);font:600 21px var(--f-display)}
+.job{background:var(--plate);border:1px solid var(--line);border-left:6px solid var(--red);border-radius:10px;padding:12px;display:grid;gap:4px;cursor:pointer;text-align:left;width:100%}
+.job .t{font:600 21px/1.15 var(--f-display)}
+.job .m{font-size:13.5px;color:var(--muted)}
+.pill{display:inline-block;font:600 11px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;border-radius:4px;padding:2px 7px;background:var(--info-bg);color:var(--info)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.warn{background:var(--amber-bg);color:var(--amber)} .pill.red{background:var(--red-bg);color:var(--red)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.tile{background:var(--plate);border:1px solid var(--line);border-top:5px solid var(--red);border-radius:10px;padding:14px;text-align:left;cursor:pointer;display:grid;gap:6px;align-content:start;min-height:112px;width:100%}
+.tile.photos{border-top-color:var(--info)} .tile.add{border-style:dashed;border-top-width:1px;background:transparent;align-content:center;text-align:center}
+.tile b{font:600 22px/1.1 var(--f-display);text-transform:uppercase}
+.tile .s{font-size:13.5px;color:var(--muted)}
+.meter{height:7px;background:var(--steel);border-radius:4px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--ok);width:0}
+.fld{display:grid;gap:4px;min-width:0}
+.fld label,.lbl{font:500 11.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.fld input,.fld textarea,.fld select{background:var(--plate);border:1px solid var(--line);border-radius:8px;padding:10px;font-size:16px;width:100%;min-width:0}
+.fld textarea{min-height:90px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:70px minmax(0,1fr) minmax(0,1fr);gap:6px}
+@media (max-width:520px){.grid2{grid-template-columns:1fr}}
+.banner{border-radius:10px;padding:10px 12px;font-size:14px;background:var(--info-bg)}
+.banner.warn{background:var(--amber-bg)} .banner.bad{background:var(--bad-bg)} .banner.ok{background:var(--ok-bg)}
+.ppe{background:var(--red-bg);border:1.5px solid var(--red);color:var(--red);font:700 13px var(--f-body);border-radius:8px;padding:8px 10px;text-align:center}
+/* checklist */
+.progress{position:sticky;top:calc(63px + env(safe-area-inset-top,0px));z-index:5;background:var(--bg);padding-block:6px;display:grid;gap:4px}
+.progress .row{justify-content:space-between;font-size:13.5px}
+details.sec{background:var(--plate);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+details.sec>summary{list-style:none;cursor:pointer;background:linear-gradient(100deg,var(--red),var(--red-2) 60%,var(--head));color:#fff;padding:12px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary b{font:600 19px/1.15 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+details.sec>summary .st{font:600 12px var(--f-mono);white-space:nowrap;opacity:.95}
+details.sec>summary .st.done{background:rgba(255,255,255,.2);border-radius:4px;padding:2px 6px}
+.secbody{padding:10px 12px;display:grid;gap:10px}
+.secphotos{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--steel);border-radius:8px;padding:8px}
+.secphotos .need{font-size:13px;color:var(--amber);font-weight:600}
+.th{width:76px;height:76px;border:0;border-radius:6px;background:var(--line) center/cover no-repeat;padding:0;cursor:pointer;position:relative}
+.th.warn::after{content:"!";position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--amber);color:#fff;font:700 12px/18px var(--f-body)}
+.camb{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:8px;min-height:44px;padding:0 12px;font-weight:600;font-size:14px;cursor:pointer;background:var(--red);color:#fff}
+.camb.up{background:var(--plate);color:var(--ink);border:1px solid var(--line)}
+.camb input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.items{display:grid;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.it{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(0,190px) 48px;gap:6px 10px;align-items:center;padding:8px 10px;border-top:1px solid var(--line)}
+.it:first-child{border-top:0}
+.it .ln{font:700 16px var(--f-display);color:var(--muted);text-align:center}
+.it .tx{font-size:14.5px}
+.it.done .tx{color:var(--muted)}
+.it input[type=text]{width:100%;border:1px solid var(--line);border-radius:6px;background:var(--steel);padding:8px;font-size:15px;min-width:0}
+.chk{appearance:none;-webkit-appearance:none;width:42px;height:42px;border:2px solid var(--line);border-radius:8px;background:var(--plate);cursor:pointer;display:grid;place-items:center;margin:0;justify-self:center}
+.chk:checked{background:var(--ok);border-color:var(--ok)}
+.chk:checked::after{content:"";width:11px;height:20px;border:solid #fff;border-width:0 4px 4px 0;transform:rotate(45deg) translate(-1px,-2px)}
+@media (max-width:640px){.it{grid-template-columns:30px minmax(0,1fr) 46px;grid-template-areas:"ln tx ck" "nt nt nt"}.it .ln{grid-area:ln}.it .tx{grid-area:tx}.it .chk{grid-area:ck}.it .nt{grid-area:nt}}
+.cert{display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:10px;align-items:center;background:var(--amber-bg);border-radius:8px;padding:10px}
+.cert b{font:700 12px var(--f-mono);color:var(--amber);letter-spacing:.08em}
+.warnbox{background:var(--bad-bg);color:var(--bad);border:1.5px solid var(--bad);border-radius:8px;padding:10px;font-weight:700;text-align:center}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.rg{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:6px}
+.rg h4{margin:0;font:600 12px var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+.rg label{display:grid;grid-template-columns:minmax(0,1fr) 92px 40px;gap:6px;align-items:center;font-size:14.5px}
+.rg input{width:100%;border:1px solid var(--line);border-radius:6px;background:var(--steel);padding:8px;font-size:16px;font-variant-numeric:tabular-nums;min-width:0}
+.rg .u{font:600 11.5px var(--f-mono);color:var(--muted)}
+.linkbtn{background:none;border:0;color:var(--info);font-weight:600;font-size:14px;cursor:pointer;padding:6px 0;text-align:left}
+/* work order */
+.wo-rows{display:grid;gap:6px}
+.sig{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:6px;background:var(--plate)}
+.sig canvas{width:100%;height:150px;border:1.5px dashed var(--line);border-radius:8px;touch-action:none;background:#fff;display:block}
+.sig .row{justify-content:space-between}
+/* photos module */
+.phlist{display:grid;gap:10px}
+.ph{background:var(--plate);border:1px solid var(--line);border-left:5px solid var(--info);border-radius:10px;padding:10px;display:grid;grid-template-columns:86px minmax(0,1fr);gap:10px;align-items:start}
+.ph .th{width:86px;height:86px}
+.ph .cap{font-size:14px;overflow-wrap:anywhere}
+.ph .meta{font:500 12px var(--f-mono);color:var(--muted)}
+/* bottom bar */
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--plate);border-top:1px solid var(--line);z-index:5;padding-bottom:env(safe-area-inset-bottom,0px)}
+.bar .wrap{padding-block:10px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.bar .btn{min-height:54px;font-size:17px}
+/* sheets */
+.sheet{position:fixed;inset:0;background:rgba(5,8,12,.62);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.panel{background:var(--bg);width:100%;max-width:900px;max-height:100%;overflow:auto;border-radius:16px 16px 0 0;-webkit-overflow-scrolling:touch}
+.phead{position:sticky;top:0;z-index:2;background:var(--head);color:var(--head-fg);display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));padding-top:calc(10px + env(safe-area-inset-top,0px));border-bottom:3px solid var(--red)}
+.phead h2{margin:0;font:600 21px var(--f-display);text-transform:uppercase}
+.pbody{padding:12px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:12px}
+.preview{background:#000;border-radius:10px;overflow:auto;max-height:55vh}
+.preview img{display:block;width:100%}
+.preview.zoom img{width:250%;max-width:none}
+.cropbox{position:relative;background:#000;border-radius:10px;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.cropbox img{display:block;width:100%;pointer-events:none}
+.cropbox .shade{position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.55);cursor:move}
+.cropbox .h{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:var(--red);border:3px solid #fff;touch-action:none}
+.qrow{border-radius:8px;padding:8px 10px;font-size:14px}
+.qrow.good{background:var(--ok-bg)} .qrow.warn{background:var(--amber-bg)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(92px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:14.5px;z-index:40;max-width:calc(100% - 32px);text-align:center}
+.ver{font:500 11.5px var(--f-mono);color:var(--muted);text-align:center}
+.busy{position:fixed;inset:0;background:rgba(5,8,12,.45);z-index:50;display:grid;place-items:center;color:#fff;font:600 18px var(--f-display);text-transform:uppercase;letter-spacing:.04em}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap">
+  <button class="hbtn" id="back" type="button" hidden>‹ Back</button>
+  <h1 id="htitle"><small>Sure Power</small>Field<span>Book</span></h1>
+  <button class="hbtn" id="hact" type="button" hidden></button>
+</div></header>
+
+<main><div class="wrap">
+  <section id="v-home" style="display:grid;gap:12px">
+    <div id="installHint" class="banner" hidden></div>
+    <div id="storeWarn" class="banner bad" hidden><b>This browser may not keep your work.</b> Send each job before closing the app.</div>
+    <button class="btn red wide" id="newJob" type="button" style="min-height:56px;font-size:18px">+ New job</button>
+    <div id="jobs" style="display:grid;gap:10px"></div>
+    <div class="card" id="cleared" hidden></div>
+    <div class="ver" id="ver"></div>
+  </section>
+
+  <section id="v-job" hidden style="display:grid;gap:12px">
+    <div class="card" id="jinfo"></div>
+    <div id="jremind"></div>
+    <div class="tiles" id="tiles"></div>
+    <div class="card">
+      <h2>Finish</h2>
+      <p class="small muted" style="margin:0">Only when the job is completely done and the final copy has been sent. Clearing takes the job off the list. It stays under <b>Cleared jobs</b> for 7 days in case you need it back.</p>
+      <div class="row"><button class="btn bad" id="finish" type="button">Job done: clear this job…</button></div>
+    </div>
+  </section>
+
+  <section id="v-wo" hidden style="display:grid;gap:12px"></section>
+  <section id="v-cl" hidden style="display:grid;gap:12px"></section>
+  <section id="v-ph" hidden style="display:grid;gap:12px"></section>
+</div></main>
+
+<div class="bar" id="bar" hidden><div class="wrap">
+  <button class="btn ok" id="send" type="button">Send PDF + CSV</button>
+  <button class="btn ghost" id="bar2" type="button" hidden></button>
+</div></div>
+
+<div class="sheet" id="sheet" hidden><div class="panel" role="dialog" aria-modal="true" aria-labelledby="stitle">
+  <div class="phead"><h2 id="stitle">…</h2><button class="hbtn" id="sclose" type="button">Done</button></div>
+  <div class="pbody" id="sbody"></div>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+<div class="busy" id="busy" hidden>Working…</div>
+
+<script>
+(() => {
+"use strict";
+const VERSION = "0.1.0";
+const VDATE = "2026-10-26";
+const PACK_FILES = ["packs/g9k1m-sms.json"];
+const PHOTO_MAX = 80*1024;
+const KEEP_MS = 7*864e5;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ls = { get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:v; }catch(_){ return d; } }, set(k,v){ try{ localStorage.setItem(k,v); }catch(_){} } };
+function toast(m,ms){ const t=$("toast"); t.textContent=m; t.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true, ms||2800); }
+function busy(on,msg){ $("busy").hidden=!on; if (msg) $("busy").textContent=msg; }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const pad2 = n => String(n).padStart(2,"0");
+const today = () => { const d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); };
+const usDate = () => { const d=new Date(); return pad2(d.getMonth()+1)+"/"+pad2(d.getDate())+"/"+d.getFullYear(); };
+const stamp = t => { const d=new Date(t); return d.toLocaleDateString(undefined,{month:"short",day:"numeric"})+" "+d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}); };
+
+// ---------- Work Order layout (matches Sure Power's Work Order template fields) ----------
+const WO_LEFT = [["job","Job #"],["site","Site Name"],["address","Address"],["contact","Contact"],["phone","Phone"],["assets","Asset(s)"],["vehicle","Vehicle #"]];
+const WO_RIGHT = [["dateOrdered","Date Ordered"],["orderedBy","Ordered By"],["dateStarted","Date Started"],["dateCompleted","Date Completed"],["startTime","Start Time"],["stopTime","Stop Time"],["techs","Technician(s)"]];
+const WO_ACK = "With my signature, I hereby acknowledge the satisfactory completion of the work described above.";
+
+// ---------- storage ----------
+let idb=null, persistent=false;
+const mem={jobs:new Map(), blobs:new Map()};
+function openDB(){ return new Promise(res=>{ try{ const r=indexedDB.open("sp-fieldbook",1);
+  r.onupgradeneeded=()=>{ const d=r.result; d.createObjectStore("jobs",{keyPath:"id"}); d.createObjectStore("blobs"); };
+  r.onsuccess=()=>res(r.result); r.onerror=()=>res(null); r.onblocked=()=>res(null); }catch(_){ res(null); } }); }
+function req(store,mode,fn){ return new Promise((res,rej)=>{ const t=idb.transaction(store,mode); const r=fn(t.objectStore(store)); t.oncomplete=()=>res(r&&r.result); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); }
+const db = {
+  async saveJob(j){ j.updated=Date.now(); if (idb) await req("jobs","readwrite",s=>s.put(j)); else mem.jobs.set(j.id,j); },
+  async delJob(id){ if (idb) await req("jobs","readwrite",s=>s.delete(id)); else mem.jobs.delete(id); },
+  async allJobs(){ if (!idb) return [...mem.jobs.values()]; return new Promise(res=>{ const r=idb.transaction("jobs").objectStore("jobs").getAll(); r.onsuccess=()=>res(r.result||[]); r.onerror=()=>res([]); }); },
+  async putBlob(id,b){ if (idb) await req("blobs","readwrite",s=>s.put(b,id)); else mem.blobs.set(id,b); },
+  async getBlob(id){ if (!idb) return mem.blobs.get(id)||null; return new Promise(res=>{ const r=idb.transaction("blobs").objectStore("blobs").get(id); r.onsuccess=()=>res(r.result||null); r.onerror=()=>res(null); }); },
+  async delBlob(id){ if (idb) await req("blobs","readwrite",s=>s.delete(id)); else mem.blobs.delete(id); },
+};
+const urls=new Map();
+async function urlFor(id){ if (urls.has(id)) return urls.get(id); const b=await db.getBlob(id); if (!b) return ""; const u=URL.createObjectURL(b); urls.set(id,u); return u; }
+let saveT=null;
+function saveSoon(){ if (!cur) return; cur.dirtyAt=Date.now(); clearTimeout(saveT); saveT=setTimeout(()=>db.saveJob(cur),350); }
+
+// ---------- packs ----------
+const PACKS={};
+async function loadPacks(){ for (const f of PACK_FILES){ try{ const p=await (await fetch(f)).json(); PACKS[p.id]=p; }catch(_){ } } }
+
+// ---------- state ----------
+let cur=null, view="home", curCl=null;
+const tech = () => ls.get("fb.tech","");
+
+// ---------- image prep: crop, quality check, compress to <= 80 kB ----------
+async function loadImg(file){
+  try{ return await createImageBitmap(file,{imageOrientation:"from-image"}); }
+  catch(_){ return await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(file); }); }
+}
+function quality(src, sx, sy, sw, sh){
+  const qs=Math.min(1,640/Math.max(sw,sh)); const qc=document.createElement("canvas"); qc.width=Math.max(1,Math.round(sw*qs)); qc.height=Math.max(1,Math.round(sh*qs));
+  const g=qc.getContext("2d"); g.drawImage(src,sx,sy,sw,sh,0,0,qc.width,qc.height);
+  const d=g.getImageData(0,0,qc.width,qc.height).data, w=qc.width, h=qc.height;
+  const gray=new Float32Array(w*h); let sum=0; const cells=new Float32Array(64), cn=new Float32Array(64);
+  for(let i=0,p=0;i<d.length;i+=4,p++){ const v=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2]; gray[p]=v; sum+=v;
+    const ci=Math.min(7,Math.floor((p%w)*8/w))+8*Math.min(7,Math.floor(Math.floor(p/w)*8/h)); cn[ci]++; if(d[i]>240&&d[i+1]>240&&d[i+2]>240) cells[ci]++; }
+  let spot=0; for(let k=0;k<64;k++) if(cn[k]) spot=Math.max(spot,cells[k]/cn[k]);
+  let a=0,b=0,n=0; for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){ const p=y*w+x; const l=4*gray[p]-gray[p-1]-gray[p+1]-gray[p-w]-gray[p+w]; a+=l; b+=l*l; n++; }
+  const sharp=n?(b/n-(a/n)**2):0, bright=sum/(w*h);
+  const issues=[]; if (sharp<120) issues.push("Blurry? Hold steady or tap the screen to focus"); if (spot>0.2) issues.push("Possible glare spot. Zoom in and check no text is washed out");
+  if (bright<55) issues.push("Too dark. Add light or step closer"); if (Math.min(sw,sh)<500) issues.push("Low resolution. Move closer");
+  return {ok:!issues.length, issues};
+}
+async function compress(src, sx, sy, sw, sh){
+  const edges=[1600,1440,1280,1152,1024,960,896,800,720,640], qs=[0.8,0.72,0.65,0.58,0.52,0.46];
+  let last=null;
+  for (const e of edges){ const s=Math.min(1,e/Math.max(sw,sh)); const c=document.createElement("canvas"); c.width=Math.max(1,Math.round(sw*s)); c.height=Math.max(1,Math.round(sh*s));
+    const g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height); g.drawImage(src,sx,sy,sw,sh,0,0,c.width,c.height);
+    for (const q of qs){ const b=await new Promise(r=>c.toBlob(r,"image/jpeg",q)); if (!b) continue; last={blob:b,w:c.width,h:c.height}; if (b.size<=PHOTO_MAX) return last; } }
+  return last;
+}
+async function makePhoto(img, crop){ // crop in natural pixels, or null for the whole photo
+  const W=img.width, H=img.height; const c=crop||{x:0,y:0,w:W,h:H};
+  const q=quality(img,c.x,c.y,c.w,c.h); const out=await compress(img,c.x,c.y,c.w,c.h);
+  return {blob:out.blob, w:out.w, h:out.h, kb:Math.round(out.blob.size/1024), q};
+}
+
+// ---------- views ----------
+function setView(v){
+  view=v; ["home","job","wo","cl","ph"].forEach(k=>$("v-"+k).hidden = k!==v);
+  $("bar").hidden = v==="home"; $("back").hidden = v==="home"; $("hact").hidden=true; $("bar2").hidden=true;
+  window.scrollTo(0,0);
+}
+function setTitle(main, sub){ $("htitle").innerHTML = `<small>${esc(sub||"Sure Power")}</small>${esc(main)}`; }
+$("back").addEventListener("click", ()=>{ if (view==="job"){ cur=null; goHome(); } else openJob(cur.id); });
+
+// ---------- home ----------
+function jobTitle(j){ return [j.wo.job||"No job #", j.wo.site].filter(Boolean).join(" · "); }
+async function goHome(){
+  setView("home"); $("htitle").innerHTML='<small>Sure Power</small>Field<span>Book</span>';
+  $("jobs").innerHTML=""; const all=(await db.allJobs()).sort((a,b)=>b.updated-a.updated);
+  const open=all.filter(j=>!j.cleared), gone=all.filter(j=>j.cleared).sort((a,b)=>b.cleared-a.cleared);
+  $("jobs").innerHTML = open.length ? open.map(j=>{
+    const n=j.checklists.length, p=allPhotos(j).length;
+    return `<button class="job" type="button" data-open="${j.id}"><span class="t">${esc(jobTitle(j))}</span>
+      <span class="m">${esc(j.wo.assets||"No assets")} · ${n} checklist${n===1?"":"s"} · ${p} photo${p===1?"":"s"} · updated ${esc(stamp(j.updated))}</span>
+      <span class="row">${j.sends.length?`<span class="pill ok">Sent ${j.sends.length}×</span>`:`<span class="pill">Not sent</span>`}${changedSinceSend(j)&&j.sends.length?`<span class="pill warn">Changed since last send</span>`:""}</span></button>`;
+  }).join("") : `<div class="empty"><b>No open jobs</b><span>Tap New job. A job holds the Work Order, its checklists and its photos, and stays on this device until you finish it.</span></div>`;
+  $("cleared").innerHTML = gone.length ? `<h2>Cleared jobs</h2><p class="small muted" style="margin:0">Kept on this device for 7 days after clearing, then deleted for good.</p>` + gone.map(j=>{
+    const left=Math.max(0,Math.ceil((j.cleared+KEEP_MS-Date.now())/864e5));
+    return `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><span class="small"><b>${esc(jobTitle(j))}</b><br><span class="muted">${j.sends.length?`sent ${j.sends.length}×`:`<b style="color:var(--bad)">never sent</b>`} · deleted in ${left} day${left===1?"":"s"}</span></span><button class="btn ghost" type="button" data-restore="${j.id}">Restore</button></div>`;
+  }).join("") : "";
+  $("cleared").hidden=!gone.length;
+  $("ver").textContent = `FieldBook v${VERSION} · ${VDATE} · ${persistent?"work saved on this device":"storage limited"}`;
+}
+$("jobs").addEventListener("click", e=>{ const b=e.target.closest("[data-open]"); if (b) openJob(b.dataset.open); });
+$("cleared").addEventListener("click", async e=>{ const b=e.target.closest("[data-restore]"); if (!b) return; const j=(await db.allJobs()).find(x=>x.id===b.dataset.restore); if (!j) return; delete j.cleared; await db.saveJob(j); goHome(); toast("Job restored"); });
+
+// ---------- job model ----------
+function newJob(){ return {id:uid(), created:Date.now(), updated:Date.now(), app:VERSION,
+  wo:{job:"",site:"",address:"",contact:"",phone:"",assets:"",vehicle:"",dateOrdered:"",orderedBy:"",dateStarted:usDate(),dateCompleted:"",startTime:"",stopTime:"",techs:tech(),
+      rows:[{qty:"",type:"",desc:""},{qty:"",type:"",desc:""},{qty:"",type:"",desc:""}], comments:"", sigTech:null, sigCust:null},
+  checklists:[], photos:[], sends:[], dirtyAt:Date.now()}; }
+function newChecklist(packId, asset){ const p=PACKS[packId]; return {id:uid(), pack:packId, packVersion:p.packVersion, title:p.title, asset:asset||"", items:{}, cert:{}, readings:{}, comments:"", added:Date.now()}; }
+function allPhotos(j){ return j.photos; }
+function photosFor(j, clId, sec){ return j.photos.filter(p=>p.cl===clId && p.sec===sec); }
+function changedSinceSend(j){ const last=j.sends.length?j.sends[j.sends.length-1].at:0; return (j.dirtyAt||j.updated) > last+1000; }
+function clStats(j, cl){
+  const p=PACKS[cl.pack]; let items=0, done=0, certs=0, certDone=0, secs=0, secPh=0, rd=0, rdDone=0;
+  p.sections.forEach(s=>{ (s.items||[]).forEach(i=>{ items++; if (cl.items[i.line]&&cl.items[i.line].pass) done++; });
+    if (s.cert){ certs++; if (cl.cert[s.num]) certDone++; }
+    if (s.photo){ secs++; if (photosFor(j,cl.id,s.num).length) secPh++; }
+    (s.readings||[]).forEach(g=>g.fields.forEach(f=>{ rd++; if ((cl.readings[rkey(g,f)]||"").trim()) rdDone++; })); });
+  return {items,done,certs,certDone,secs,secPh,rd,rdDone};
+}
+const rkey = (g,f) => g.group+"|"+f.label+"|"+f.unit;
+function woStats(j){ const all=WO_LEFT.concat(WO_RIGHT); const filled=all.filter(([k])=>(j.wo[k]||"").trim()).length; return {filled,total:all.length,signed:!!(j.wo.sigTech&&j.wo.sigCust)}; }
+
+// ---------- new job ----------
+$("newJob").addEventListener("click", ()=>{
+  openSheet("New job", `
+    <div class="grid2">
+      <div class="fld"><label for="n-job">Job #</label><input id="n-job" placeholder="SP26-0000" autocapitalize="characters" autocomplete="off"></div>
+      <div class="fld"><label for="n-tech">Technician(s)</label><input id="n-tech" value="${esc(tech())}" autocomplete="off"></div>
+    </div>
+    <div class="fld"><label for="n-site">Site Name</label><input id="n-site" placeholder="Customer / site" autocomplete="off"></div>
+    <div class="fld"><label for="n-assets">Asset(s)</label><input id="n-assets" placeholder="TRL052 BC471" autocapitalize="characters" autocomplete="off"></div>
+    <button class="btn red wide" id="n-go" type="button">Start job</button>
+    <p class="small muted" style="margin:0">Everything else goes on the Work Order inside the job. The job stays on this device until you finish it.</p>`);
+});
+async function startJob(){
+  const g=id=>($(id).value||"").trim();
+  const j=newJob(); j.wo.job=g("n-job").toUpperCase(); j.wo.techs=g("n-tech"); j.wo.site=g("n-site"); j.wo.assets=g("n-assets").toUpperCase();
+  if (j.wo.job==="LTCOLUMBO"){ closeSheet(); return demoJob(); }
+  if (!j.wo.job && !j.wo.site){ toast("Enter a job # or a site"); return; }
+  ls.set("fb.tech", j.wo.techs); await db.saveJob(j); cur=j; closeSheet(); openJob(j.id); toast("Job started");
+}
+
+// ---------- job view ----------
+async function openJob(id){
+  cur = (await db.allJobs()).find(j=>j.id===id) || cur; if (!cur) return goHome();
+  setView("job"); setTitle(jobTitle(cur),"Job"); renderJob();
+}
+function renderJob(){
+  const j=cur, ws=woStats(j);
+  $("jinfo").innerHTML = `<div class="row">${j.sends.length?`<span class="pill ok">Sent ${j.sends.length}×</span>`:`<span class="pill">Not sent</span>`}${j.sends.length&&changedSinceSend(j)?`<span class="pill warn">Changed since last send</span>`:""}</div>
+    <div><b>${esc(j.wo.site||"No site")}</b> · Job ${esc(j.wo.job||"—")}</div>
+    <div class="small muted">Assets ${esc(j.wo.assets||"—")} · Tech ${esc(j.wo.techs||"—")}${j.wo.address?" · "+esc(j.wo.address):""}</div>`;
+  const hrs = (Date.now() - (j.sends.length?j.sends[j.sends.length-1].at:j.created))/36e5;
+  $("jremind").innerHTML = (changedSinceSend(j) && hrs>6) ? `<div class="banner warn"><b>Send your progress.</b> ${j.sends.length?"This job has changed since the last send":"This job has never been sent"}. Sending at the end of each day keeps a copy safe if this device loses its data.</div>` : "";
+  const tiles=[];
+  tiles.push(`<button class="tile" type="button" data-go="wo"><b>Work Order</b><span class="s">${ws.filled} of ${ws.total} fields · ${ws.signed?"signed ✓":(j.wo.sigTech||j.wo.sigCust?"1 of 2 signatures":"not signed")}</span><span class="meter"><i style="width:${Math.round(100*ws.filled/ws.total)}%"></i></span></button>`);
+  j.checklists.forEach(cl=>{ const s=clStats(j,cl);
+    tiles.push(`<button class="tile" type="button" data-go="cl" data-cl="${cl.id}"><b>${esc(PACKS[cl.pack]?PACKS[cl.pack].title:cl.title)}</b>
+      <span class="s">${esc(cl.asset||"No asset")} · ${s.done} of ${s.items} checked · CERT ${s.certDone}/${s.certs} · photos ${s.secPh}/${s.secs} sections</span><span class="meter"><i style="width:${Math.round(100*s.done/Math.max(1,s.items))}%"></i></span></button>`); });
+  tiles.push(`<button class="tile add" type="button" data-go="addcl"><b>+ Add checklist</b><span class="s">One per asset</span></button>`);
+  const gp=j.photos.filter(p=>!p.cl).length;
+  tiles.push(`<button class="tile photos" type="button" data-go="ph"><b>Photos</b><span class="s">${gp} job photo${gp===1?"":"s"} · damage, site, anything else</span></button>`);
+  $("tiles").innerHTML=tiles.join("");
+}
+$("tiles").addEventListener("click", e=>{ const t=e.target.closest("[data-go]"); if (!t) return;
+  if (t.dataset.go==="wo") openWO(); else if (t.dataset.go==="cl") openCL(t.dataset.cl); else if (t.dataset.go==="ph") openPH(); else addChecklistSheet(); });
+function addChecklistSheet(){
+  const first=(cur.wo.assets||"").split(/[\s,]+/).find(a=>/^(TRL|UPS)/i.test(a))||"";
+  openSheet("Add checklist", `
+    <div class="fld"><label>Checklist</label>${Object.values(PACKS).map((p,i)=>`<label class="card" style="grid-template-columns:auto 1fr;align-items:center;cursor:pointer"><input type="radio" name="pk" value="${p.id}" ${i===0?"checked":""} style="width:22px;height:22px"><span><b>${esc(p.title)}</b><br><span class="small muted">${esc(p.subtitle)} · ${esc(p.family)} · pack ${esc(p.packVersion)}</span></span></label>`).join("")}</div>
+    <div class="fld"><label for="a-asset">Asset # for this checklist</label><input id="a-asset" value="${esc(first)}" placeholder="TRL052" autocapitalize="characters" autocomplete="off"></div>
+    <button class="btn red wide" id="a-go" type="button">Add checklist</button>`);
+}
+
+// ---------- Work Order ----------
+function openWO(){ setView("wo"); setTitle("Work Order", jobTitle(cur)); renderWO(); }
+function renderWO(){
+  const w=cur.wo; const f=([k,l])=>`<div class="fld"><label for="wo-${k}">${esc(l)}</label><input id="wo-${k}" data-wo="${k}" value="${esc(w[k])}" autocomplete="off" ${k==="job"||k==="assets"?'autocapitalize="characters"':""}></div>`;
+  $("v-wo").innerHTML = `
+    <div class="card"><h2>Job</h2><div class="grid2"><div style="display:grid;gap:8px">${WO_LEFT.map(f).join("")}</div><div style="display:grid;gap:8px">${WO_RIGHT.map(f).join("")}</div></div>
+      <div class="row"><button class="btn ghost" type="button" id="wo-now-start">Start time = now</button><button class="btn ghost" type="button" id="wo-now-stop">Stop time = now</button><button class="btn ghost" type="button" id="wo-done-today">Completed today</button></div></div>
+    <div class="card"><h2>Work</h2><div class="wo-rows"><div class="grid3"><span class="lbl">QTY</span><span class="lbl">Type</span><span class="lbl">Description of work</span></div>
+      ${w.rows.map((r,i)=>`<div class="grid3"><div class="fld"><input data-row="${i}" data-k="qty" value="${esc(r.qty)}" inputmode="numeric" aria-label="Quantity ${i+1}"></div><div class="fld"><input data-row="${i}" data-k="type" value="${esc(r.type)}" placeholder="${i===0?"1MW UPS System (trailer)":""}" aria-label="Type ${i+1}"></div><div class="fld"><input data-row="${i}" data-k="desc" value="${esc(r.desc)}" placeholder="${i===0?"Start-Up":""}" aria-label="Description ${i+1}"></div></div>`).join("")}</div></div>
+    <div class="card"><h2>Comments</h2><div class="fld"><textarea id="wo-comments" data-wo="comments" placeholder="Work performed, findings, follow-up. Tap the keyboard microphone to talk.">${esc(w.comments)}</textarea></div></div>
+    <div class="card"><h2>Signatures</h2><p class="small muted" style="margin:0">${esc(WO_ACK)}</p>
+      ${sigBlock("sigTech","S.P.I. Rep signature")}${sigBlock("sigCust","Customer signature")}
+      <p class="small muted" style="margin:0">These signatures also appear on every checklist in the PDF.</p></div>`;
+  ["sigTech","sigCust"].forEach(k=>initPad(k));
+}
+function sigBlock(k,label){ const s=cur.wo[k]; return `<div class="sig"><div class="row"><span class="lbl">${esc(label)}</span><span class="row"><span class="small muted" id="${k}-date">${s?"Signed "+esc(s.date):"Sign with a finger"}</span><button class="btn ghost" type="button" data-clearsig="${k}" style="min-height:36px">Clear</button></span></div><canvas id="${k}-pad" width="900" height="300"></canvas></div>`; }
+async function initPad(k){
+  const c=$(k+"-pad"), g=c.getContext("2d"); g.lineWidth=4; g.lineCap="round"; g.lineJoin="round"; g.strokeStyle="#111";
+  const s=cur.wo[k]; if (s && s.blob){ const u=await urlFor(s.blob); const im=new Image(); im.onload=()=>g.drawImage(im,0,0,c.width,c.height); im.src=u; }
+  let down=false, drew=false; const pt=e=>{ const r=c.getBoundingClientRect(); return [(e.clientX-r.left)*c.width/r.width,(e.clientY-r.top)*c.height/r.height]; };
+  c.addEventListener("pointerdown",e=>{ down=true; drew=false; c.setPointerCapture(e.pointerId); const [x,y]=pt(e); g.beginPath(); g.moveTo(x,y); });
+  c.addEventListener("pointermove",e=>{ if(!down) return; const [x,y]=pt(e); g.lineTo(x,y); g.stroke(); drew=true; });
+  const end=async()=>{ if(!down) return; down=false; if(!drew) return;
+    const b=await new Promise(r=>c.toBlob(r,"image/png")); const id=(cur.wo[k]&&cur.wo[k].blob)||uid(); await db.putBlob(id,b); urls.delete(id);
+    cur.wo[k]={blob:id, date:usDate(), at:Date.now()}; $(k+"-date").textContent="Signed "+cur.wo[k].date; saveSoon(); };
+  c.addEventListener("pointerup",end); c.addEventListener("pointercancel",end);
+}
+$("v-wo").addEventListener("input", e=>{ const t=e.target;
+  if (t.dataset.wo){ cur.wo[t.dataset.wo]=t.value; if (t.dataset.wo==="techs") ls.set("fb.tech",t.value); saveSoon(); }
+  if (t.dataset.row){ cur.wo.rows[+t.dataset.row][t.dataset.k]=t.value; saveSoon(); } });
+$("v-wo").addEventListener("click", async e=>{ const t=e.target;
+  const now=()=>new Date().toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+  if (t.id==="wo-now-start"){ cur.wo.startTime=now(); $("wo-startTime").value=cur.wo.startTime; saveSoon(); }
+  if (t.id==="wo-now-stop"){ cur.wo.stopTime=now(); $("wo-stopTime").value=cur.wo.stopTime; saveSoon(); }
+  if (t.id==="wo-done-today"){ cur.wo.dateCompleted=usDate(); $("wo-dateCompleted").value=cur.wo.dateCompleted; saveSoon(); }
+  if (t.dataset.clearsig){ const k=t.dataset.clearsig; if (cur.wo[k]&&cur.wo[k].blob) await db.delBlob(cur.wo[k].blob); cur.wo[k]=null; const c=$(k+"-pad"); c.getContext("2d").clearRect(0,0,c.width,c.height); $(k+"-date").textContent="Sign with a finger"; saveSoon(); }
+});
+
+// ---------- Checklist ----------
+function openCL(id){ curCl=cur.checklists.find(c=>c.id===id); if (!curCl) return; setView("cl"); setTitle(PACKS[curCl.pack].title, curCl.asset||jobTitle(cur)); renderCL(); }
+function secStatus(cl,s){ const its=s.items||[]; const done=its.filter(i=>cl.items[i.line]&&cl.items[i.line].pass).length; const rd=(s.readings||[]).reduce((n,g)=>n+g.fields.filter(f=>(cl.readings[rkey(g,f)]||"").trim()).length,0), rt=(s.readings||[]).reduce((n,g)=>n+g.fields.length,0);
+  const ph=photosFor(cur,cl.id,s.num).length; const full = its.length ? (done===its.length && (!s.cert||cl.cert[s.num])) : rd===rt;
+  return {txt: its.length?`${done}/${its.length}${s.cert?(cl.cert[s.num]?" · CERT ✓":" · CERT"):""}`:`${rd}/${rt}`, ph, full}; }
+async function renderCL(){
+  const cl=curCl, p=PACKS[cl.pack], st=clStats(cur,cl);
+  const open = new Set([...document.querySelectorAll("#v-cl details[open]")].map(d=>d.dataset.sec));
+  const secs = await Promise.all(p.sections.map(async s=>{ const ss=secStatus(cl,s); const phs=photosFor(cur,cl.id,s.num);
+    const thumbs=(await Promise.all(phs.map(async ph=>`<button class="th${ph.q&&!ph.q.ok?" warn":""}" type="button" data-ph="${ph.id}" style="background-image:url('${await urlFor(ph.id)}')" aria-label="Photo for section ${s.num}"></button>`))).join("");
+    return `<details class="sec" data-sec="${s.num}" ${open.has(String(s.num))||(!open.size&&s.num===p.sections[0].num)?"open":""}>
+      <summary><b>${s.num}. ${esc(s.title)}</b><span class="st${ss.full?" done":""}">${esc(ss.txt)} · 📷${ss.ph}</span></summary>
+      <div class="secbody">
+        ${s.warning?`<div class="warnbox">${esc(s.warning)}</div>`:""}
+        <div class="secphotos">${thumbs}${phs.length?"":`<span class="need">Photo of this section's screen</span>`}
+          <label class="camb">📷 ${phs.length?"Add":"Take"} photo<input type="file" accept="image/*" capture="environment" data-shoot="${s.num}"></label>
+          <label class="camb up">Upload<input type="file" accept="image/*" multiple data-upload="${s.num}"></label></div>
+        ${(s.items||[]).length?`<div class="items">${s.items.map(i=>{ const v=cl.items[i.line]||{};
+          return `<div class="it${v.pass?" done":""}"><span class="ln">${i.line}</span><span class="tx">${esc(i.text)}</span><input class="nt" type="text" data-note="${i.line}" value="${esc(v.note||"")}" placeholder="Notes / setting" aria-label="Notes line ${i.line}"><input class="chk" type="checkbox" data-pass="${i.line}" ${v.pass?"checked":""} aria-label="Pass line ${i.line}"></div>`; }).join("")}</div>
+          <button class="linkbtn" type="button" data-all="${s.num}">Mark all ${s.items.length} lines passed</button>`:""}
+        ${(s.readings||[]).length?`<div class="rgrid">${s.readings.map(g=>`<div class="rg"><h4>${esc(g.group)}</h4>${g.fields.map(f=>`<label>${esc(f.label)}<input type="text" inputmode="decimal" data-rd="${esc(rkey(g,f))}" value="${esc(cl.readings[rkey(g,f)]||"")}"><span class="u">${esc(f.unit)}</span></label>`).join("")}</div>`).join("")}</div>`:""}
+        ${s.cert?`<label class="cert"><span><b>CERT</b><br><span class="small">${esc(p.certText)}</span></span><input class="chk" type="checkbox" data-cert="${s.num}" ${cl.cert[s.num]?"checked":""} aria-label="Certify section ${s.num}"></label>`:""}
+      </div></details>`; }));
+  $("v-cl").innerHTML = `
+    <div class="progress"><div class="row"><span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>photos ${st.secPh}/${st.secs} · readings ${st.rdDone}/${st.rd}</span></div><span class="meter"><i style="width:${Math.round(100*st.done/Math.max(1,st.items))}%"></i></span></div>
+    <div class="ppe">${esc(p.ppe)}</div>
+    <div class="card"><div class="grid2"><div class="fld"><label for="cl-asset">Asset #</label><input id="cl-asset" value="${esc(cl.asset)}" autocapitalize="characters" autocomplete="off"></div>
+      <div class="fld"><label>Checklist</label><div class="small" style="padding-top:6px">${esc(p.subtitle)}<br><span class="muted">pack ${esc(p.packVersion)}</span></div></div></div></div>
+    ${secs.join("")}
+    <div class="card"><h2>Technician comments</h2><div class="fld"><textarea id="cl-comments" placeholder="Anything about this unit. Explain any line that isn't checked.">${esc(cl.comments)}</textarea></div>
+      <p class="small muted" style="margin:0">Signatures come from the Work Order.</p>
+      <button class="btn bad" type="button" id="cl-remove" style="justify-self:start">Remove this checklist…</button></div>`;
+}
+function refreshCLHeader(){ const st=clStats(cur,curCl); const pr=document.querySelector("#v-cl .progress"); if (!pr) return;
+  pr.querySelector(".row").innerHTML=`<span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>photos ${st.secPh}/${st.secs} · readings ${st.rdDone}/${st.rd}</span>`;
+  pr.querySelector(".meter i").style.width=Math.round(100*st.done/Math.max(1,st.items))+"%";
+  PACKS[curCl.pack].sections.forEach(s=>{ const d=document.querySelector(`#v-cl details[data-sec="${s.num}"] .st`); if (!d) return; const ss=secStatus(curCl,s); d.textContent=`${ss.txt} · 📷${ss.ph}`; d.classList.toggle("done",ss.full); }); }
+$("v-cl").addEventListener("change", async e=>{ const t=e.target, cl=curCl;
+  if (t.dataset.pass){ const v=cl.items[t.dataset.pass]||(cl.items[t.dataset.pass]={}); v.pass=t.checked; t.closest(".it").classList.toggle("done",t.checked); saveSoon(); refreshCLHeader(); }
+  if (t.dataset.cert){ cl.cert[t.dataset.cert]=t.checked; saveSoon(); refreshCLHeader(); }
+  if (t.dataset.shoot && t.files.length){ const f=t.files[0]; t.value=""; cropFlow(f, {cl:cl.id, sec:+t.dataset.shoot}); }
+  if (t.dataset.upload && t.files.length){ const fs=[...t.files]; t.value=""; if (fs.length===1) cropFlow(fs[0],{cl:cl.id,sec:+t.dataset.upload}); else { busy(true,"Adding photos…"); for (const f of fs) await addPhoto(f,null,{cl:cl.id,sec:+t.dataset.upload}); busy(false); renderCL(); toast(`Added ${fs.length} photos`); } }
+});
+$("v-cl").addEventListener("input", e=>{ const t=e.target, cl=curCl;
+  if (t.dataset.note){ const v=cl.items[t.dataset.note]||(cl.items[t.dataset.note]={}); v.note=t.value; saveSoon(); }
+  if (t.dataset.rd!==undefined){ cl.readings[t.dataset.rd]=t.value; saveSoon(); refreshCLHeader(); }
+  if (t.id==="cl-asset"){ cl.asset=t.value.toUpperCase(); saveSoon(); }
+  if (t.id==="cl-comments"){ cl.comments=t.value; saveSoon(); }
+});
+$("v-cl").addEventListener("click", e=>{ const t=e.target;
+  const th=t.closest("[data-ph]"); if (th){ openPhotoSheet(th.dataset.ph); return; }
+  if (t.dataset.all){ const s=PACKS[curCl.pack].sections.find(x=>x.num===+t.dataset.all); s.items.forEach(i=>{ const v=curCl.items[i.line]||(curCl.items[i.line]={}); v.pass=true; });
+    saveSoon(); renderCL(); toast("All lines marked passed. CERT is still yours to tick."); }
+  if (t.id==="cl-remove"){ openSheet("Remove checklist?", `<div class="banner bad">This removes <b>${esc(PACKS[curCl.pack].title)}${curCl.asset?" · "+esc(curCl.asset):""}</b> and its section photos from this job.</div><button class="btn bad wide" type="button" id="rm-yes">Remove checklist</button><button class="btn ghost wide" type="button" id="rm-no">Keep it</button>`); }
+});
+
+// ---------- photo flow: crop → quality → compress ----------
+let crop=null;
+async function cropFlow(file, where){
+  let img; try{ img=await loadImg(file); }catch(_){ toast("Couldn't open that photo"); return; }
+  const W=img.width, H=img.height; crop={file, where, img, r:{x:W*0.06,y:H*0.06,w:W*0.88,h:H*0.88}};
+  const c=document.createElement("canvas"); const s=Math.min(1,1400/Math.max(W,H)); c.width=Math.round(W*s); c.height=Math.round(H*s); c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+  const prev=c.toDataURL("image/jpeg",0.8);
+  openSheet("Crop to the screen", `
+    <p class="small muted" style="margin:0">Drag the red corners around the display so the photo is all screen. The text comes out sharper.</p>
+    <div class="cropbox" id="cbox"><img src="${prev}" alt="Photo to crop"><div class="shade" id="cshade"></div><div class="h" data-h="tl"></div><div class="h" data-h="tr"></div><div class="h" data-h="bl"></div><div class="h" data-h="br"></div></div>
+    <div class="grid2"><button class="btn ghost" type="button" id="c-full">Use whole photo</button><button class="btn red" type="button" id="c-crop">Crop and save</button></div>`);
+  requestAnimationFrame(layoutCrop);
+}
+function layoutCrop(){
+  const box=$("cbox"); if (!box||!crop) return; const k=box.clientWidth/crop.img.width; const r=crop.r;
+  Object.assign($("cshade").style,{left:r.x*k+"px",top:r.y*k+"px",width:r.w*k+"px",height:r.h*k+"px"});
+  const pos={tl:[r.x,r.y],tr:[r.x+r.w,r.y],bl:[r.x,r.y+r.h],br:[r.x+r.w,r.y+r.h]};
+  box.querySelectorAll(".h").forEach(h=>{ const [x,y]=pos[h.dataset.h]; h.style.left=x*k+"px"; h.style.top=y*k+"px"; });
+}
+document.addEventListener("pointerdown", e=>{
+  const h=e.target.closest("#cbox .h, #cshade"); if (!h||!crop) return; e.preventDefault();
+  const box=$("cbox"), k=box.clientWidth/crop.img.width, W=crop.img.width, H=crop.img.height, min=W*0.08;
+  const start={x:e.clientX,y:e.clientY,r:{...crop.r}}, which=h.dataset.h||"move";
+  const mv=ev=>{ const dx=(ev.clientX-start.x)/k, dy=(ev.clientY-start.y)/k; let {x,y,w,h:hh}=start.r;
+    if (which==="move"){ x=Math.min(Math.max(0,x+dx),W-w); y=Math.min(Math.max(0,y+dy),H-hh); }
+    else { let x2=x+w, y2=y+hh; if (which.includes("l")) x=Math.min(Math.max(0,x+dx),x2-min); if (which.includes("r")) x2=Math.max(Math.min(W,x2+dx),x+min);
+      if (which.includes("t")) y=Math.min(Math.max(0,y+dy),y2-min); if (which.includes("b")) y2=Math.max(Math.min(H,y2+dy),y+min); w=x2-x; hh=y2-y; }
+    crop.r={x,y,w,h:hh}; layoutCrop(); };
+  const up=()=>{ document.removeEventListener("pointermove",mv); document.removeEventListener("pointerup",up); };
+  document.addEventListener("pointermove",mv); document.addEventListener("pointerup",up);
+});
+window.addEventListener("resize", ()=>crop&&layoutCrop());
+async function addPhoto(file, cr, where, imgIn){
+  const img=imgIn||await loadImg(file); const pr=await makePhoto(img, cr);
+  const id=uid(); await db.putBlob(id, pr.blob);
+  const ph={id, at:Date.now(), w:pr.w, h:pr.h, kb:pr.kb, q:pr.q, caption:"", cl:where?where.cl:null, sec:where?where.sec:null};
+  cur.photos.push(ph); cur.dirtyAt=Date.now(); await db.saveJob(cur); return ph;
+}
+async function finishCrop(useCrop){
+  const c=crop; crop=null; closeSheet(); busy(true,"Saving photo…");
+  try{ const r=useCrop?{x:Math.round(c.r.x),y:Math.round(c.r.y),w:Math.round(c.r.w),h:Math.round(c.r.h)}:null;
+    const ph=await addPhoto(c.file, r, c.where, c.img); busy(false);
+    if (view==="cl") renderCL(); else if (view==="ph") renderPH();
+    toast(`Saved · ${ph.kb} kB${ph.q.ok?"":" · check the photo"}`);
+  }catch(err){ busy(false); toast("Couldn't save the photo"); }
+}
+
+// ---------- photo sheet ----------
+let openPhotoId=null;
+async function openPhotoSheet(pid){
+  const p=cur.photos.find(x=>x.id===pid); if (!p) return; openPhotoId=pid;
+  const where = p.cl ? (()=>{ const cl=cur.checklists.find(c=>c.id===p.cl); const s=cl&&PACKS[cl.pack].sections.find(x=>x.num===p.sec); return s?`Section ${s.num}. ${s.title}`:"Checklist photo"; })() : "Job photo";
+  openSheet(where, `
+    <div class="preview" id="prev"><img src="${await urlFor(p.id)}" alt="Photo"></div>
+    <div class="small muted">${esc(stamp(p.at))} · ${p.kb} kB · ${p.w}×${p.h}</div>
+    ${p.q.ok?`<div class="qrow good"><b>Looks OK.</b> Tap the photo to zoom and check you can read it.</div>`:p.q.issues.map(s=>`<div class="qrow warn"><b>Check:</b> ${esc(s)}</div>`).join("")}
+    <div class="fld"><label for="p-cap">Caption (optional)</label><textarea id="p-cap" placeholder="What does this show?">${esc(p.caption||"")}</textarea></div>
+    <div class="row"><label class="btn red" for="p-retake">Retake<input id="p-retake" type="file" accept="image/*" capture="environment"></label>
+      <button class="btn bad" type="button" id="p-del">Delete photo</button><span id="p-delask" hidden>Sure? <button class="btn bad" type="button" id="p-delyes">Delete</button></span></div>`);
+}
+
+// ---------- Photos module (job photos) ----------
+function openPH(){ setView("ph"); setTitle("Photos", jobTitle(cur)); renderPH(); }
+async function renderPH(){
+  const ps=cur.photos.filter(p=>!p.cl);
+  const items=await Promise.all(ps.map(async (p,i)=>`<div class="ph"><button class="th${p.q&&!p.q.ok?" warn":""}" type="button" data-ph="${p.id}" style="background-image:url('${await urlFor(p.id)}')" aria-label="Photo ${i+1}"></button>
+    <div style="display:grid;gap:4px;min-width:0"><span class="cap">${p.caption?esc(p.caption):'<span class="muted">Tap the photo to add a caption</span>'}</span><span class="meta">${esc(stamp(p.at))} · ${p.kb} kB</span></div></div>`));
+  $("v-ph").innerHTML = `<div class="card"><h2>Job photos</h2><p class="small muted" style="margin:0">Anything that isn't a checklist screen: damage, site conditions, nameplates, delivery. Section screen photos live inside each checklist.</p>
+    <div class="row"><label class="camb">📷 Take photo<input type="file" accept="image/*" capture="environment" id="ph-shoot"></label><label class="camb up">Upload<input type="file" accept="image/*" multiple id="ph-up"></label></div></div>
+    <div class="phlist">${items.join("")||`<div class="empty"><b>No job photos yet</b><span>Each photo is cropped, checked for blur and glare, and saved at 80 kB or less.</span></div>`}</div>`;
+}
+$("v-ph").addEventListener("change", async e=>{ const t=e.target;
+  if (t.id==="ph-shoot" && t.files.length){ const f=t.files[0]; t.value=""; cropFlow(f,null); }
+  if (t.id==="ph-up" && t.files.length){ const fs=[...t.files]; t.value=""; if (fs.length===1) return cropFlow(fs[0],null); busy(true,"Adding photos…"); for (const f of fs) await addPhoto(f,null,null); busy(false); renderPH(); toast(`Added ${fs.length} photos`); }
+});
+$("v-ph").addEventListener("click", e=>{ const th=e.target.closest("[data-ph]"); if (th) openPhotoSheet(th.dataset.ph); });
+
+// ---------- sheet plumbing ----------
+let sheetKind="";
+function openSheet(title, html, kind){ $("stitle").textContent=title; $("sbody").innerHTML=html; sheetKind=kind||title; $("sheet").hidden=false; document.body.style.overflow="hidden"; }
+async function closeSheet(){
+  if (openPhotoId && cur){ const p=cur.photos.find(x=>x.id===openPhotoId); const cap=$("p-cap"); if (p && cap){ p.caption=cap.value.trim(); await db.saveJob(cur); } openPhotoId=null; if (view==="cl") renderCL(); else if (view==="ph") renderPH(); }
+  crop=null; $("sheet").hidden=true; document.body.style.overflow="";
+  if (view==="job" && cur) renderJob();
+}
+$("sclose").addEventListener("click", closeSheet);
+$("sheet").addEventListener("click", async e=>{
+  const t=e.target; if (t===$("sheet")) return closeSheet();
+  if (t.id==="n-go") return startJob();
+  if (t.id==="a-go"){ const pk=(document.querySelector("input[name=pk]:checked")||{}).value; if (!pk) return; const cl=newChecklist(pk, ($("a-asset").value||"").trim().toUpperCase()); cur.checklists.push(cl); await db.saveJob(cur); closeSheet(); openCL(cl.id); return; }
+  if (t.id==="c-full") return finishCrop(false);
+  if (t.id==="c-crop") return finishCrop(true);
+  if (t.id==="rm-no") return closeSheet();
+  if (t.id==="rm-yes"){ const id=curCl.id; for (const p of cur.photos.filter(p=>p.cl===id)) await db.delBlob(p.id); cur.photos=cur.photos.filter(p=>p.cl!==id); cur.checklists=cur.checklists.filter(c=>c.id!==id); await db.saveJob(cur); closeSheet(); openJob(cur.id); toast("Checklist removed"); return; }
+  if (t.closest("#prev")){ $("prev").classList.toggle("zoom"); return; }
+  if (t.id==="p-del"){ $("p-delask").hidden=false; return; }
+  if (t.id==="p-delyes"){ const id=openPhotoId; openPhotoId=null; cur.photos=cur.photos.filter(p=>p.id!==id); await db.delBlob(id); cur.dirtyAt=Date.now(); await db.saveJob(cur); closeSheet(); if (view==="cl") renderCL(); else renderPH(); toast("Photo deleted"); return; }
+  if (t.id==="fin-no") return closeSheet();
+  if (t.id==="fin-send"){ closeSheet(); return openSend(); }
+  if (t.id==="fin-yes" && !t.disabled){ cur.cleared=Date.now(); await db.saveJob(cur); cur=null; closeSheet(); goHome(); toast("Job cleared. Restore it from Cleared jobs for 7 days.",4500); return; }
+  if (t.id==="doShare"||t.id==="doPdf"||t.id==="doCsv") return doSend(t.id);
+});
+$("sheet").addEventListener("change", async e=>{ const t=e.target;
+  if (t.id==="p-retake" && t.files.length){ const p=cur.photos.find(x=>x.id===openPhotoId); const f=t.files[0]; const where=p.cl?{cl:p.cl,sec:p.sec}:null;
+    cur.photos=cur.photos.filter(x=>x.id!==p.id); await db.delBlob(p.id); openPhotoId=null; cropFlow(f, where); }
+  if (t.id==="fin-ok"){ const b=$("fin-yes"); b.disabled=!t.checked; }
+});
+
+// ---------- send: one PDF + one CSV ----------
+const safe = s => String(s||"").trim().replace(/[\\/:*?"<>|]+/g,"").replace(/\s+/g," ").slice(0,70);
+function baseName(j){ const kinds=[...new Set(j.checklists.map(c=>PACKS[c.pack].kind))]; const kind=kinds.length?kinds.map(k=>k[0].toUpperCase()+k.slice(1)).join("+"):"Job";
+  return safe(`${j.wo.job||"NoJob"} ${j.wo.site||""} ${kind} ${today()}${j.sends.length?" ("+(j.sends.length+1)+")":""}`); }
+function openSend(){
+  const j=cur; if (!j) return; const ws=woStats(j);
+  const warn=[]; if (!ws.signed) warn.push("The Work Order is not fully signed.");
+  j.checklists.forEach(cl=>{ const s=clStats(j,cl); const name=PACKS[cl.pack].title+(cl.asset?" · "+cl.asset:""); if (s.done<s.items) warn.push(`${esc(name)}: ${s.items-s.done} line${s.items-s.done>1?"s":""} unchecked (explain in comments).`); if (s.certDone<s.certs) warn.push(`${esc(name)}: ${s.certs-s.certDone} section${s.certs-s.certDone>1?"s":""} not certified.`); });
+  openSheet("Send job", `
+    ${j.sends.length?`<div class="banner">Sent ${j.sends.length} time${j.sends.length>1?"s":""} so far. Each send is a complete copy of the whole job.</div>`:""}
+    ${warn.length?`<div class="banner warn"><b>Not finished yet. That's fine for a progress send.</b><br>${warn.join("<br>")}</div>`:`<div class="banner ok"><b>Everything is filled in, certified and signed.</b></div>`}
+    <p class="small muted" style="margin:0">File name: <b>${esc(baseName(j))}</b></p>
+    <button class="btn ok wide" type="button" id="doShare" style="min-height:54px">Share PDF + CSV (email, text, Drive)</button>
+    <div class="grid2"><button class="btn ghost" type="button" id="doPdf">Save PDF</button><button class="btn ghost" type="button" id="doCsv">Save CSV</button></div>
+    <p class="small muted" style="margin:0"><b>PDF</b> is the record for the rental database and the customer. <b>CSV</b> holds every line, reading and certification as rows, for Excel and the Trailer History Generator. Both go into the rental database.</p>
+    <div id="sendnote" class="small muted"></div>`);
+}
+$("send").addEventListener("click", openSend);
+async function buildFiles(){ const name=baseName(cur); const pdf=await buildPdf(cur); const csv=new Blob(["﻿"+buildCsv(cur)],{type:"text/csv"}); return {name,pdf,csv,no:cur.sends.length+1}; }
+function saveBlob(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),60000); }
+async function markSent(f,how){ cur.sends.push({n:f.no, at:Date.now(), how, pdfKb:Math.round(f.pdf.size/1024)}); await db.saveJob(cur); cur.dirtyAt=cur.sends[cur.sends.length-1].at-2000; await db.saveJob(cur); }
+async function doSend(which){
+  const note=$("sendnote"); note.textContent="Building files…";
+  try{ const f=await buildFiles(); const pdfF=new File([f.pdf],f.name+".pdf",{type:"application/pdf"}), csvF=new File([f.csv],f.name+".csv",{type:"text/csv"});
+    if (which==="doShare"){
+      if (navigator.canShare && navigator.canShare({files:[pdfF,csvF]})){ await navigator.share({files:[pdfF,csvF], title:f.name, text:f.name}); await markSent(f,"share"); closeSheet(); renderAfterSend(); toast(`Send #${f.no} shared`); }
+      else if (navigator.canShare && navigator.canShare({files:[pdfF]})){ await navigator.share({files:[pdfF], title:f.name}); await markSent(f,"share-pdf"); note.textContent="Shared the PDF. This device can't share two files at once, so use Save CSV for the CSV."; }
+      else note.textContent="This device can't share files from here. Use Save PDF and Save CSV, then attach them.";
+    } else { const isPdf=which==="doPdf"; saveBlob(isPdf?f.pdf:f.csv, f.name+(isPdf?".pdf":".csv")); if (isPdf) await markSent(f,"save-pdf");
+      note.textContent=`Saved ${f.name}${isPdf?".pdf":".csv"} (${((isPdf?f.pdf:f.csv).size/1e6).toFixed(2)} MB).`; }
+  }catch(err){ note.textContent = err&&err.name==="AbortError" ? "Share cancelled. Nothing was marked as sent." : "Couldn't build the files: "+((err&&err.message)||"error"); }
+}
+function renderAfterSend(){ if (view==="job") renderJob(); }
+
+// ---------- CSV: one row per item / reading / CERT / field ----------
+function buildCsv(j){
+  const q=v=>{ const s=String(v??""); return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; };
+  const head=["record","job","site","asset","checklist","pack_version","section","section_title","line","item","result","notes","group","value","unit","technician","date","app_version"];
+  const rows=[head]; const base=(asset,cl,p)=>({job:j.wo.job,site:j.wo.site,asset,checklist:cl?p.id:"",pack_version:cl?cl.packVersion:"",technician:j.wo.techs,date:today(),app_version:VERSION});
+  const push=o=>rows.push(head.map(h=>o[h]??""));
+  WO_LEFT.concat(WO_RIGHT).forEach(([k,l])=>push({...base(j.wo.assets),record:"WORK_ORDER",item:l,value:j.wo[k]}));
+  j.wo.rows.forEach((r,i)=>{ if (r.qty||r.type||r.desc) push({...base(j.wo.assets),record:"WORK_ORDER",item:"Row "+(i+1),value:[r.qty,r.type,r.desc].filter(Boolean).join(" | ")}); });
+  push({...base(j.wo.assets),record:"WORK_ORDER",item:"Signed",value:(j.wo.sigTech?"S.P.I. rep "+j.wo.sigTech.date:"S.P.I. rep not signed")+"; "+(j.wo.sigCust?"customer "+j.wo.sigCust.date:"customer not signed")});
+  if (j.wo.comments) push({...base(j.wo.assets),record:"WORK_ORDER",item:"Comments",notes:j.wo.comments});
+  j.checklists.forEach(cl=>{ const p=PACKS[cl.pack], b=base(cl.asset,cl,p);
+    p.sections.forEach(s=>{ (s.items||[]).forEach(i=>{ const v=cl.items[i.line]||{}; push({...b,record:"ITEM",section:s.num,section_title:s.title,line:i.line,item:i.text,result:v.pass?"PASS":"OPEN",notes:v.note||""}); });
+      (s.readings||[]).forEach(g=>g.fields.forEach(f=>push({...b,record:"READING",section:s.num,section_title:s.title,item:f.label,group:g.group,value:cl.readings[rkey(g,f)]||"",unit:f.unit})));
+      if (s.cert) push({...b,record:"CERT",section:s.num,section_title:s.title,result:cl.cert[s.num]?"CERTIFIED":"NOT CERTIFIED"});
+      const n=photosFor(j,cl.id,s.num).length; if (s.photo) push({...b,record:"PHOTOS",section:s.num,section_title:s.title,value:n}); });
+    if (cl.comments) push({...b,record:"COMMENT",notes:cl.comments}); });
+  return rows.map(r=>r.map(q).join(",")).join("\r\n")+"\r\n";
+}
+
+// ---------- PDF (built on the device; Helvetica, JPEG photos) ----------
+const WIN={0x2014:0x97,0x2013:0x96,0x2018:0x91,0x2019:0x92,0x201C:0x93,0x201D:0x94,0x2022:0x95,0x2026:0x85,0x2122:0x99,0x2713:0x76};
+const HW=[278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+function cw(ch,bold){ const c=ch.charCodeAt(0); const w=(c>=32&&c<=126)?HW[c-32]:(c===0xD8||c===0xF8?778:556); return bold?w*1.07:w; }
+function textW(s,size,bold){ let w=0; for (const ch of String(s)) w+=cw(ch,bold); return w*size/1000; }
+function wrapW(s,width,size,bold){ const out=[]; String(s||"").split(/\n/).forEach(par=>{ let line=""; par.split(/\s+/).forEach(w=>{ const t=line?line+" "+w:w; if (textW(t,size,bold)>width && line){ out.push(line); line=w; } else line=t; }); out.push(line); }); return out; }
+function pdfStr(s){ let o=""; for (const ch of String(s??"").normalize("NFC")){ let c=ch.charCodeAt(0); if (WIN[c]) c=WIN[c]; else if (c>255 || (c>=127&&c<160)) { const d=ch.normalize("NFKD").replace(/[^\x20-\x7E]/g,""); o+=d.replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)"); continue; }
+  const x=String.fromCharCode(c); o+= x==="\\"?"\\\\": x==="("?"\\(": x===")"?"\\)": x; } return o; }
+const L1 = s => { const u=new Uint8Array(s.length); for (let i=0;i<s.length;i++) u[i]=s.charCodeAt(i)&255; return u; };
+async function jpegOf(id){ const b=await db.getBlob(id); return new Uint8Array(await b.arrayBuffer()); }
+async function sigJpeg(sig){ if (!sig||!sig.blob) return null; const b=await db.getBlob(sig.blob); if (!b) return null; const img=await loadImg(b);
+  const c=document.createElement("canvas"); c.width=img.width; c.height=img.height; const g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0);
+  const j=await new Promise(r=>c.toBlob(r,"image/jpeg",0.85)); return {bytes:new Uint8Array(await j.arrayBuffer()), w:c.width, h:c.height}; }
+
+async function buildPdf(j){
+  const W=612,H=792,M=36,CW=W-2*M; const pages=[]; let P=null, y=0;
+  const images=[]; // {bytes,w,h}
+  const imgRef=(im)=>{ images.push(im); return "Im"+images.length; };
+  const RED="0.71 0.12 0.14", INK="0.08 0.1 0.12", MUT="0.35 0.38 0.43", LINE="0.75 0.79 0.83", SOFT="0.95 0.96 0.97";
+  const T=(x,yy,size,s,bold,col)=>{ P.c+=`BT ${col||INK} rg /${bold?"F2":"F1"} ${size} Tf ${x.toFixed(1)} ${yy.toFixed(1)} Td (${pdfStr(s)}) Tj ET\n`; };
+  const TR=(xr,yy,size,s,bold,col)=>T(xr-textW(s,size,bold),yy,size,s,bold,col);
+  const rect=(x,yy,w,h,fill,stroke)=>{ if (fill) P.c+=`${fill} rg ${x.toFixed(1)} ${yy.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re f\n`; if (stroke) P.c+=`${stroke} RG 0.6 w ${x.toFixed(1)} ${yy.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)} re S\n`; };
+  const img=(name,x,yy,w,h)=>{ P.c+=`q ${w.toFixed(2)} 0 0 ${h.toFixed(2)} ${x.toFixed(2)} ${yy.toFixed(2)} cm /${name} Do Q\n`; P.x.add(name); };
+  const box=(x,yy,s,checked)=>{ rect(x,yy,s,s,"1 1 1","0.35 0.38 0.43"); if (checked) P.c+=`0.13 0.46 0.29 RG 1.8 w ${(x+s*0.2).toFixed(1)} ${(yy+s*0.5).toFixed(1)} m ${(x+s*0.42).toFixed(1)} ${(yy+s*0.22).toFixed(1)} l ${(x+s*0.82).toFixed(1)} ${(yy+s*0.8).toFixed(1)} l S\n`; };
+  let hdr=null;
+  const newPage=()=>{ P={c:"",x:new Set(),hdr}; pages.push(P);
+    for (let i=0;i<40;i++){ const f=i/40; const a=f<.55?[0.71,0.12,0.14]:[0.44,0.07,0.08], b=f<.55?[0.44,0.07,0.08]:[0.07,0.09,0.13], k=f<.55?f/.55:(f-.55)/.45; P.c+=`${a.map((v,n)=>(v+(b[n]-v)*k).toFixed(3)).join(" ")} rg ${(i*W/40).toFixed(1)} ${H-52} ${(W/40+0.6).toFixed(1)} 52 re f\n`; }
+    T(M,H-24,15,hdr.title,true,"1 1 1"); T(M,H-41,9,hdr.sub,false,"1 1 1"); TR(W-M,H-24,9,"SURE POWER, INC.",true,"1 1 1"); TR(W-M,H-41,8.5,hdr.right||"",false,"1 1 1");
+    y=H-66; if (hdr.info){ hdr.info(); } };
+  const need=h=>{ if (y-h<M+22) newPage(); };
+  // ---- Work Order ----
+  const w=j.wo;
+  hdr={title:"WORK ORDER", sub:"Sure Power, Inc. · UPS Rental", right:"Job #: "+(w.job||"—")};
+  newPage();
+  const half=CW/2, lw=88;
+  const rows=Math.max(WO_LEFT.length,WO_RIGHT.length);
+  for (let i=0;i<rows;i++){ const yy=y-i*20-20; [[WO_LEFT[i],M],[WO_RIGHT[i],M+half]].forEach(([fld,x])=>{ if (!fld) return; rect(x,yy,half,20,null,LINE); rect(x,yy,lw,20,SOFT,null); T(x+5,yy+6.5,8.5,fld[1]+":",true);
+      const v=wrapW(w[fld[0]]||"",half-lw-8,9.5,false)[0]||""; T(x+lw+5,yy+6.5,9.5,v); }); }
+  y-=rows*20+16;
+  const cqty=44, ctype=230; rect(M,y-18,CW,18,SOFT,LINE); T(M+5,y-12.5,8.5,"QTY",true); T(M+cqty+5,y-12.5,8.5,"TYPE",true); T(M+cqty+ctype+5,y-12.5,8.5,"DESCRIPTION OF WORK",true); y-=18;
+  w.rows.forEach(r=>{ rect(M,y-20,CW,20,null,LINE); T(M+5,y-13.5,9.5,r.qty); T(M+cqty+5,y-13.5,9.5,wrapW(r.type,ctype-10,9.5)[0]||""); T(M+cqty+ctype+5,y-13.5,9.5,wrapW(r.desc,CW-cqty-ctype-10,9.5)[0]||""); y-=20; });
+  y-=14; rect(M,y-18,CW,18,SOFT,LINE); T(M+5,y-12.5,8.5,"COMMENTS",true); y-=18;
+  const cl_=wrapW(w.comments||"",CW-12,10).slice(0,24); const ch=Math.max(160,cl_.length*13+12); rect(M,y-ch,CW,ch,null,LINE); cl_.forEach((ln,i)=>T(M+6,y-15-i*13,10,ln)); y-=ch+18;
+  const sigT=await sigJpeg(w.sigTech), sigC=await sigJpeg(w.sigCust);
+  const sigBox=(x,label,sig,s)=>{ rect(x,y-96,half-8,96,null,LINE); T(x+6,y-14,8.5,label,true); if (sig){ const nm=imgRef(sig); const bh=60, bw=Math.min(half-24, bh*sig.w/sig.h); img(nm,x+8,y-82,bw,bh); } T(x+6,y-91,8.5,"DATE: "+(s?s.date:""),true); };
+  sigBox(M,"S.P.I. REP SIGNATURE:",sigT,w.sigTech); sigBox(M+half+8,"CUSTOMER SIGNATURE:",sigC,w.sigCust); y-=110;
+  T(M,y,9,WO_ACK,true); y-=14;
+  // ---- Checklists ----
+  for (const cl of j.checklists){ const p=PACKS[cl.pack];
+    const info=[["Asset #",cl.asset],["Site Name",w.site],["Job #",w.job],["Date",w.dateStarted],["Technician",w.techs],["Site Address",w.address]];
+    hdr={title:p.title.toUpperCase(), sub:p.subtitle, right:"Pack "+p.packVersion, info:()=>{ const cw3=CW/3; info.forEach(([l,v],i)=>{ const x=M+(i%3)*cw3, yy=y-16-Math.floor(i/3)*16; T(x,yy,8,l.toUpperCase()+":",true,MUT); T(x+textW(l.toUpperCase()+": ",8,true)+2,yy,9,wrapW(v||"",cw3-70,9)[0]||""); }); y-=46; }};
+    newPage();
+    rect(M,y-18,CW,18,"0.98 0.91 0.91","0.71 0.12 0.14"); const ppw=textW(p.ppe,8.5,true); T(M+(CW-ppw)/2,y-12,8.5,p.ppe,true,RED); y-=26;
+    const cLn=30, cNt=150, cPs=34, cDs=CW-cLn-cNt-cPs;
+    for (const s of p.sections){
+      const band=cont=>{ rect(M,y-18,CW,18,"0.44 0.07 0.08",null); T(M+6,y-12.5,10,`${s.num}. ${s.title.toUpperCase()}${cont?"  (CONTINUED)":""}`,true,"1 1 1"); y-=18; };
+      const colHead=()=>{ rect(M,y-14,CW,14,SOFT,LINE); T(M+4,y-10,7.5,"LINE",true,MUT); T(M+cLn+4,y-10,7.5,"DESCRIPTION",true,MUT); T(M+cLn+cDs+4,y-10,7.5,"NOTES / SETTING",true,MUT); T(M+CW-cPs+4,y-10,7.5,"PASS",true,MUT); y-=14; };
+      need(60); band(false);
+      if (s.warning){ need(18); rect(M,y-16,CW,16,"0.98 0.91 0.91",null); const ww=textW(s.warning,8.5,true); T(M+(CW-ww)/2,y-11,8.5,s.warning,true,RED); y-=16; }
+      if ((s.items||[]).length){
+        colHead();
+        for (const it of s.items){ const v=cl.items[it.line]||{}; const dl=wrapW(it.text,cDs-8,8.5), nl=wrapW(v.note||"",cNt-8,8.5); const h=Math.max(dl.length,nl.length)*10.5+6;
+          if (y-h<M+22){ newPage(); band(true); colHead(); } rect(M,y-h,CW,h,null,LINE); T(M+4,y-11,8.5,String(it.line),true); dl.forEach((ln,i)=>T(M+cLn+4,y-11-i*10.5,8.5,ln)); nl.forEach((ln,i)=>T(M+cLn+cDs+4,y-11-i*10.5,8.5,ln,false,"0.11 0.37 0.66")); box(M+CW-cPs+10,y-h/2-6.5,13,!!v.pass); y-=h; }
+      }
+      if ((s.readings||[]).length){ const gw=(CW-12)/2; let gx=0, rowTop=y, rowH=0;
+        s.readings.forEach((g,gi)=>{ const h=14+g.fields.length*13+4; if (gi%2===0){ need(h+4); rowTop=y; rowH=0; } const x=M+(gi%2)*(gw+12);
+          rect(x,rowTop-h,gw,h,null,LINE); rect(x,rowTop-14,gw,14,SOFT,null); T(x+5,rowTop-10,7.5,g.group,true,MUT);
+          g.fields.forEach((f,fi)=>{ const yy=rowTop-14-13*(fi+1)+3; T(x+6,yy,8.5,f.label); const val=cl.readings[rkey(g,f)]||""; TR(x+gw-44,yy,9,val,true); T(x+gw-38,yy,8,f.unit,false,MUT); });
+          rowH=Math.max(rowH,h); if (gi%2===1||gi===s.readings.length-1){ y=rowTop-rowH-6; } }); }
+      if (s.cert){ if (y-22<M+22){ newPage(); band(true); } rect(M,y-20,CW,20,"0.99 0.95 0.86",LINE); T(M+5,y-13.5,8,"CERT",true,"0.66 0.42 0"); T(M+36,y-13.5,8,p.certText); box(M+CW-cPs+10,y-16.5,13,!!cl.cert[s.num]); y-=20; }
+      const phs=photosFor(j,cl.id,s.num);
+      for (let i=0;i<phs.length;i+=2){ const pair=phs.slice(i,i+2); const pw=(CW-12)/2, ph=Math.min(230, Math.max(...pair.map(p=>pw*p.h/p.w)));
+        need(ph+28); for (let k=0;k<pair.length;k++){ const p_=pair[k]; const bytes=await jpegOf(p_.id); const nm=imgRef({bytes,w:p_.w,h:p_.h}); const sc=Math.min(pw/p_.w, ph/p_.h); const iw=p_.w*sc, ih=p_.h*sc; const x=M+k*(pw+12)+(pw-iw)/2;
+          img(nm,x,y-6-ih,iw,ih); T(M+k*(pw+12),y-ph-17,7.5,`Section ${s.num} photo ${i+k+1} · ${stamp(p_.at)}${p_.caption?" · "+p_.caption:""}`.slice(0,95),false,MUT); }
+        y-=ph+24; }
+      if (!phs.length && s.photo){ need(14); T(M+4,y-10,7.5,`No photo for section ${s.num}.`,false,"0.66 0.42 0"); y-=14; }
+      y-=8;
+    }
+    // comments + signatures (mirrored from the Work Order)
+    const cmt=wrapW(cl.comments||"",CW-12,9.5).slice(0,30); const chh=Math.max(60,cmt.length*12+24); need(chh+120);
+    rect(M,y-18,CW,18,"0.44 0.07 0.08",null); T(M+6,y-12.5,10,"TECHNICIAN COMMENTS",true,"1 1 1"); y-=18; rect(M,y-chh+18,CW,chh-18,null,LINE); cmt.forEach((ln,i)=>T(M+6,y-14-i*12,9.5,ln)); y-=chh-10;
+    rect(M,y-18,CW,18,"0.44 0.07 0.08",null); T(M+6,y-12.5,10,"SIGNATURE BLOCK",true,"1 1 1"); y-=26;
+    sigBox(M,"TECHNICIAN SIGNATURE:",sigT,w.sigTech); sigBox(M+half+8,"CUSTOMER SIGNATURE:",sigC,w.sigCust); y-=104;
+  }
+  // ---- Job photos ----
+  const gp=j.photos.filter(p=>!p.cl);
+  if (gp.length){ hdr={title:"JOB PHOTOS", sub:`${w.site||""} · Job ${w.job||"—"}`, right:`${gp.length} photo${gp.length===1?"":"s"}`}; newPage();
+    for (let i=0;i<gp.length;i++){ const p_=gp[i]; const cap=wrapW(p_.caption||"",CW,9).slice(0,3); const maxH=300; const sc=Math.min(CW/p_.w, maxH/p_.h); const iw=p_.w*sc, ih=p_.h*sc;
+      need(ih+30+cap.length*11); const bytes=await jpegOf(p_.id); const nm=imgRef({bytes,w:p_.w,h:p_.h}); img(nm,M+(CW-iw)/2,y-ih,iw,ih); y-=ih+12;
+      T(M,y,8.5,`Photo ${i+1} · ${stamp(p_.at)}`,true,MUT); y-=11; cap.forEach(ln=>{ T(M,y,9,ln); y-=11; }); y-=10; } }
+  // ---- write objects ----
+  const parts=[]; let len=0; const offs=[]; const push=x=>{ const u=typeof x==="string"?L1(x):x; parts.push(u); len+=u.length; };
+  let n=0; const alloc=()=>++n; const obj=(id,fn)=>{ offs[id]=len; push(`${id} 0 obj\n`); fn(); push("\nendobj\n"); };
+  const catalog=alloc(), pagesId=alloc(), f1=alloc(), f2=alloc(), info=alloc();
+  push("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  obj(f1,()=>push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"));
+  obj(f2,()=>push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"));
+  obj(info,()=>push(`<< /Title (${pdfStr(baseName(j))}) /Producer (Sure Power FieldBook v${VERSION}) /Creator (FieldBook) >>`));
+  const imgIds=images.map(im=>{ const id=alloc(); obj(id,()=>{ push(`<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`); push(im.bytes); push("\nendstream"); }); return id; });
+  const pageIds=[]; const total=pages.length; const packs=[...new Set(j.checklists.map(c=>PACKS[c.pack].id+" "+c.packVersion))].join(", ");
+  pages.forEach((pg,i)=>{ const pid=alloc(), cid=alloc(); pageIds.push(pid);
+    P=pg; T(M,18,7,`FieldBook v${VERSION}${packs?" · pack "+packs:""} · Job ${w.job||"—"} · ${baseName(j)}`,false,MUT); TR(W-M,18,7,`Page ${i+1} of ${total}`,true,MUT);
+    const c=L1(pg.c); obj(cid,()=>{ push(`<< /Length ${c.length} >>\nstream\n`); push(c); push("\nendstream"); });
+    const xo=[...pg.x].map(nm=>`/${nm} ${imgIds[+nm.slice(2)-1]} 0 R`).join(" ");
+    obj(pid,()=>push(`<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >>${xo?` /XObject << ${xo} >>`:""} >> /Contents ${cid} 0 R >>`)); });
+  obj(pagesId,()=>push(`<< /Type /Pages /Kids [${pageIds.map(id=>id+" 0 R").join(" ")}] /Count ${pageIds.length} >>`));
+  obj(catalog,()=>push(`<< /Type /Catalog /Pages ${pagesId} 0 R >>`));
+  const xref=len; let x=`xref\n0 ${n+1}\n0000000000 65535 f \n`; for (let i=1;i<=n;i++) x+=String(offs[i]||0).padStart(10,"0")+" 00000 n \n";
+  push(x+`trailer\n<< /Size ${n+1} /Root ${catalog} 0 R /Info ${info} 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob(parts,{type:"application/pdf"});
+}
+
+// ---------- finish (soft delete, 7 days) ----------
+$("finish").addEventListener("click", ()=>{
+  const j=cur, changed=changedSinceSend(j), never=!j.sends.length;
+  const ok=!never && !changed;
+  openSheet("Clear this job?", (ok?`<div class="banner ok"><b>The latest version has been sent.</b></div>`
+    :`<div class="banner bad" style="font-size:16px"><b style="font-size:18px">Stop: the office doesn't have the latest copy.</b><br>${never?"This job has <b>never been sent</b>.":"The job <b>changed after the last send</b>."}</div><button class="btn ok wide" type="button" id="fin-send" style="min-height:52px">Send it now</button>`)
+    + `<p class="small" style="margin:0">Clearing takes <b>${esc(jobTitle(j))}</b> off the list. It stays under <b>Cleared jobs</b> for 7 days, then it is deleted from this device.</p>
+    ${ok?"":`<label class="small" style="display:flex;gap:12px;align-items:center;background:var(--plate);border:1px solid var(--line);border-radius:10px;padding:12px"><input type="checkbox" id="fin-ok" style="width:24px;height:24px;flex:none"> <span>I understand the office does not have the latest copy of this job.</span></label>`}
+    <button class="btn bad wide" type="button" id="fin-yes" ${ok?"":"disabled"}>Clear job</button>
+    <button class="btn ghost wide" type="button" id="fin-no">Keep it</button>`);
+});
+async function purgeCleared(){ for (const j of await db.allJobs()) if (j.cleared && Date.now()-j.cleared>KEEP_MS){ for (const p of j.photos) await db.delBlob(p.id); for (const k of ["sigTech","sigCust"]) if (j.wo[k]) await db.delBlob(j.wo[k].blob); await db.delJob(j.id); } }
+
+// ---------- Developer Mode: Job # LTCOLUMBO builds a synthetic demo job ----------
+async function demoJob(){
+  busy(true,"Investigating…");
+  const j=newJob(); Object.assign(j.wo,{job:"SYN-DEMO-01",site:"Synthetic Test Site",address:"100 Example Way, Testville, PA 19000",contact:"Test Contact (000) 000-0000",phone:"Test Manager (000) 000-0001",assets:"TRL-T01",vehicle:"V-00",dateOrdered:usDate(),orderedBy:"Demo",techs:tech()||"Demo Tech",startTime:"8:00 AM"});
+  j.wo.rows[0]={qty:"1",type:"1MW UPS System (trailer-mounted)",desc:"Start-Up"}; j.wo.comments="Synthetic demo job created by Developer Mode. Not a real record.";
+  const cl=newChecklist("g9k1m-sms","TRL-T01"); j.checklists.push(cl); const p=PACKS[cl.pack];
+  p.sections.forEach(s=>{ (s.items||[]).forEach(i=>cl.items[i.line]={pass:i.line%17!==0,note:i.line%9===0?"demo note "+i.line:""}); if (s.cert) cl.cert[s.num]=s.num!==4;
+    (s.readings||[]).forEach(g=>g.fields.forEach(f=>cl.readings[rkey(g,f)]= f.unit==="VAC"?"480":f.unit==="AAC"?"612":f.unit==="VDC"?"540":f.unit==="ADC"?"9":f.unit==="kVA"?"508":"497")); });
+  cl.comments="Lines 17, 34, 51, 68 and 85 left open on purpose (demo). Section 4 not certified (demo).";
+  cur=j;
+  for (const s of p.sections.slice(0,4)){ const c=document.createElement("canvas"); c.width=1200; c.height=900; const g=c.getContext("2d"); g.fillStyle="#1c2733"; g.fillRect(0,0,1200,900); g.fillStyle="#cfe3ff"; g.font="bold 64px monospace";
+    g.fillText("SYNTHETIC SCREEN", 80, 140); g.font="48px monospace"; for (let r=0;r<10;r++) g.fillText(`No.${100+r*7} : ${1000+r*37} -> ${1010+r*37}`, 80, 240+r*60); g.fillText(`Section ${s.num}`, 80, 860);
+    const b=await new Promise(r=>c.toBlob(r,"image/jpeg",0.9)); await addPhoto(b,null,{cl:cl.id,sec:s.num}); }
+  await db.saveJob(j); busy(false); toast("Ah... just one more thing... Demo job created.",4000); openJob(j.id);
+}
+
+// ---------- install hint + boot ----------
+function installHint(){
+  const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  if (standalone || ls.get("fb.hintDone","")) return;
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent);
+  $("installHint").innerHTML = (ios?"<b>Install it:</b> tap the Share button in Safari, then <b>Add to Home Screen</b>. It will then open without signal."
+    :"<b>Install it:</b> open the browser's ⋮ menu and tap <b>Add to Home screen</b> or <b>Install app</b>. It will then open without signal.")+` <button class="btn ghost" type="button" id="hintOk" style="min-height:34px;padding:4px 10px;margin-left:6px">OK</button>`;
+  $("installHint").hidden=false; $("hintOk").onclick=()=>{ ls.set("fb.hintDone","1"); $("installHint").hidden=true; };
+}
+window.FieldBook = { version:VERSION, packs:PACKS, buildPdf:j=>buildPdf(j||cur), buildCsv:j=>buildCsv(j||cur), current:()=>cur };
+(async ()=>{
+  idb=await openDB();
+  if (idb){ persistent=true; try{ if (navigator.storage&&navigator.storage.persist) await navigator.storage.persist(); }catch(_){} }
+  $("storeWarn").hidden=persistent;
+  await loadPacks();
+  try{ await purgeCleared(); }catch(_){}
+  installHint(); goHome();
+  if ("serviceWorker" in navigator && window.isSecureContext && location.protocol!=="file:"){
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      reg.addEventListener("updatefound",()=>{ const w=reg.installing; w && w.addEventListener("statechange",()=>{ if (w.state==="installed" && navigator.serviceWorker.controller) toast("FieldBook updated. Close and reopen to use the new version.",6000); }); });
+    }).catch(()=>{});
+  }
+})();
+})();
+</script>
+</body>
+</html>
