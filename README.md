@@ -21,9 +21,10 @@ Open it once with signal after installing. After that it opens anywhere.
 3. **+ Add checklist**: pick the checklist and the asset #. One checklist per asset.
 4. **Required screen photos** (top of the checklist): take each listed screen. Drag the red corners to crop to the display, or **Use whole photo**. Each row shows the TMEIC screen code and how to get there. Extra photos are optional: use **Extra photo** in any section, and add notes to any photo.
 5. Tick each line, add notes or settings, then tick **CERT** for the section yourself. "Mark all passed" never ticks CERT.
-6. **Photos** (on the job screen): damage, nameplates, site conditions.
-7. **Send PDF + CSV**. Send as often as you like. Each send is a complete copy of the whole job.
-8. **Job done: clear this job…** only after the final send. Cleared jobs can be restored for 7 days.
+6. **Photos not permitted at this site** (job screen): turn it on only when the site bans photos, and give the reason. Required screen photos are skipped, and the PDF (page 1) and CSV state the reason.
+7. **Photos** (on the job screen): damage, nameplates, site conditions.
+8. **Send PDF + CSV**. Send as often as you like. Each send is a complete copy of the whole job.
+9. **Job done: clear this job…** only after the final send. Cleared jobs can be restored for 7 days.
 
 Photos are checked for blur, glare and darkness and saved at **80 kB or less** each, so a full startup with photos is about 1 MB.
 
@@ -55,6 +56,8 @@ Planned: G9000 225 / 500 kVA SMS, Toshiba standalone, Vertiv / NPower PM, load t
 Enter job # **LTCOLUMBO** to create a synthetic demo job (fake screens, fake readings). Automated test: `tests/e2e.js` (Playwright; run against a local server, `node tests/e2e.js <photo-folder> <out-folder>`; test photos are kept locally, never in this repo).
 
 ## Change log
+
+- **0.2.1 · 2026-10-26**: "Photos not permitted at this site" switch with a required reason (and optional who said so), shown on the Work Order page and in the CSV.
 
 - **0.2.0 · 2026-10-26**: Photos moved out of the checklist pages to the end of the PDF (printing optional). Each pack lists its minimum required screen photos; Send warns about missing ones; the CSV lists each as TAKEN or MISSING. Photo notes print under the photo.
 

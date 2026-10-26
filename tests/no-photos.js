@@ -1,0 +1,21 @@
+const { chromium } = require('playwright');
+const OUT = process.argv[2];
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell' });
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, acceptDownloads: true });
+  const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
+  const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
+  await pg.goto('http://localhost:8765/'); await pg.click('#newJob'); await pg.fill('#n-job', 'SP26-7003'); await pg.fill('#n-site', 'Secure Site'); await pg.fill('#n-assets', 'TRL099'); await pg.click('#n-go'); await pg.waitForSelector('#tiles');
+  await pg.click('[data-go=addcl]'); await pg.click('#a-go'); await pg.waitForSelector('details.sec'); await pg.click('#back'); await pg.waitForSelector('#np-on');
+  await pg.click('#send'); await pg.waitForSelector('#doPdf'); ok((await pg.textContent('#sbody')).includes('required screen photos missing'), 'warns missing before switch'); await pg.click('#sclose');
+  await pg.check('#np-on'); await pg.waitForSelector('#np-why');
+  await pg.click('#send'); await pg.waitForSelector('#doPdf'); ok((await pg.textContent('#sbody')).includes('no reason is given'), 'warns no reason'); await pg.click('#sclose');
+  await pg.fill('#np-why', 'Customer policy: no phones on the data floor'); await pg.fill('#np-who', 'J. Smith, site manager'); await pg.waitForTimeout(500);
+  await pg.screenshot({ path: OUT + '/np_job.png', fullPage: true });
+  await pg.click('[data-go=cl]'); await pg.waitForSelector('details.sec'); ok((await pg.textContent('#v-cl')).includes('Required screen photos skipped'), 'checklist shows skipped banner'); await pg.click('#back');
+  await pg.reload(); await pg.click('[data-open]'); await pg.waitForSelector('#np-why'); ok(await pg.inputValue('#np-why') === 'Customer policy: no phones on the data floor', 'reason persists');
+  await pg.click('#send'); await pg.waitForSelector('#doPdf'); const t = await pg.textContent('#sbody'); ok(!t.includes('photo') || !t.includes('missing ('), 'no missing-photo warning');
+  let [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('#doPdf')]); await dl.saveAs(OUT + '/np.pdf');
+  [dl] = await Promise.all([pg.waitForEvent('download'), pg.click('#doCsv')]); await dl.saveAs(OUT + '/np.csv');
+  console.log('ERRORS', JSON.stringify(errs)); await b.close();
+})();

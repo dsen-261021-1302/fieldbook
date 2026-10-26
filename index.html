@@ -182,6 +182,7 @@ details.sec>summary .st.done{background:rgba(255,255,255,.2);border-radius:4px;p
     <div class="card" id="jinfo"></div>
     <div id="jremind"></div>
     <div class="tiles" id="tiles"></div>
+    <div class="card" id="jnoph"></div>
     <div class="card">
       <h2>Finish</h2>
       <p class="small muted" style="margin:0">Only when the job is completely done and the final copy has been sent. Clearing takes the job off the list. It stays under <b>Cleared jobs</b> for 7 days in case you need it back.</p>
@@ -209,7 +210,7 @@ details.sec>summary .st.done{background:rgba(255,255,255,.2);border-radius:4px;p
 <script>
 (() => {
 "use strict";
-const VERSION = "0.2.0";
+const VERSION = "0.2.1";
 const VDATE = "2026-10-26";
 const PACK_FILES = ["packs/g9k1m-sms.json"];
 const PHOTO_MAX = 80*1024;
@@ -380,12 +381,20 @@ function renderJob(){
   tiles.push(`<button class="tile" type="button" data-go="wo"><b>Work Order</b><span class="s">${ws.filled} of ${ws.total} fields · ${ws.signed?"signed ✓":(j.wo.sigTech||j.wo.sigCust?"1 of 2 signatures":"not signed")}</span><span class="meter"><i style="width:${Math.round(100*ws.filled/ws.total)}%"></i></span></button>`);
   j.checklists.forEach(cl=>{ const s=clStats(j,cl);
     tiles.push(`<button class="tile" type="button" data-go="cl" data-cl="${cl.id}"><b>${esc(PACKS[cl.pack]?PACKS[cl.pack].title:cl.title)}</b>
-      <span class="s">${esc(cl.asset||"No asset")} · ${s.done} of ${s.items} checked · CERT ${s.certDone}/${s.certs} · screen photos ${s.reqDone}/${s.req}</span><span class="meter"><i style="width:${Math.round(100*s.done/Math.max(1,s.items))}%"></i></span></button>`); });
+      <span class="s">${esc(cl.asset||"No asset")} · ${s.done} of ${s.items} checked · CERT ${s.certDone}/${s.certs} · ${noPh(j)?"photos not permitted":`screen photos ${s.reqDone}/${s.req}`}</span><span class="meter"><i style="width:${Math.round(100*s.done/Math.max(1,s.items))}%"></i></span></button>`); });
   tiles.push(`<button class="tile add" type="button" data-go="addcl"><b>+ Add checklist</b><span class="s">One per asset</span></button>`);
   const gp=j.photos.filter(p=>!p.cl).length;
   tiles.push(`<button class="tile photos" type="button" data-go="ph"><b>Photos</b><span class="s">${gp} job photo${gp===1?"":"s"} · damage, site, anything else</span></button>`);
   $("tiles").innerHTML=tiles.join("");
+  const np=j.noPhotos||{};
+  $("jnoph").innerHTML = `<label style="display:flex;gap:12px;align-items:center;cursor:pointer"><input class="chk" type="checkbox" id="np-on" ${np.on?"checked":""} aria-label="Photos not permitted at this site"><span><b>Photos not permitted at this site</b><br><span class="small muted">Turn on only when the site does not allow photos. Required screen photos are then skipped, and the PDF and CSV say why.</span></span></label>
+    ${np.on?`<div class="fld"><label for="np-why">Reason (required)</label><input id="np-why" value="${esc(np.reason||"")}" placeholder="e.g. Customer policy: no phones/photos on the data floor" autocomplete="off"></div>
+    <div class="fld"><label for="np-who">Who said so (optional)</label><input id="np-who" value="${esc(np.who||"")}" placeholder="Name / title" autocomplete="off"></div>`:""}`;
 }
+$("jnoph").addEventListener("change", e=>{ if (e.target.id==="np-on"){ cur.noPhotos=Object.assign(cur.noPhotos||{}, {on:e.target.checked}); saveSoon(); renderJob(); if (e.target.checked) setTimeout(()=>$("np-why")&&$("np-why").focus(),50); } });
+$("jnoph").addEventListener("input", e=>{ if (e.target.id==="np-why"){ cur.noPhotos.reason=e.target.value; saveSoon(); } if (e.target.id==="np-who"){ cur.noPhotos.who=e.target.value; saveSoon(); } });
+const noPh = j => !!(j.noPhotos&&j.noPhotos.on);
+const noPhText = j => `Photos not permitted at this site: ${(j.noPhotos.reason||"no reason given").trim()}${j.noPhotos.who?` (per ${j.noPhotos.who.trim()})`:""}`;
 $("tiles").addEventListener("click", e=>{ const t=e.target.closest("[data-go]"); if (!t) return;
   if (t.dataset.go==="wo") openWO(); else if (t.dataset.go==="cl") openCL(t.dataset.cl); else if (t.dataset.go==="ph") openPH(); else addChecklistSheet(); });
 function addChecklistSheet(){
@@ -462,10 +471,10 @@ async function renderCL(){
     const th=ps.length?`<button class="th${ps[0].q&&!ps[0].q.ok?" warn":""}" type="button" data-ph="${ps[0].id}" style="background-image:url('${await urlFor(ps[0].id)}')" aria-label="${esc(r.name)} photo"></button>`:`<span class="ph0">📷</span>`;
     return head+`<div class="req">${th}<span><b>${esc(r.name)}</b><span class="pth">${esc(r.id.replace(/-.*/,""))} · ${esc(r.path)}${ps.length>1?` · ${ps.length} photos`:""}</span></span>
       <span class="acts"><label class="camb${ps.length?" up":""}">${ps.length?"Add":"Take"}<input type="file" accept="image/*" capture="environment" data-rshoot="${esc(r.id)}"></label><label class="camb up">⇪<input type="file" accept="image/*" data-rup="${esc(r.id)}" aria-label="Upload ${esc(r.name)}"></label></span></div>`; }))).join("");
-  const reqHtml = req.length ? `<details class="sec" data-sec="req" ${open.has("req")||!open.size?"open":""}><summary><b>Required screen photos</b><span class="st${st.reqDone===st.req?" done":""}" id="reqst">${st.reqDone}/${st.req}</span></summary>
+  const reqHtml = req.length && noPh(cur) ? `<div class="banner warn"><b>Required screen photos skipped.</b> ${esc(noPhText(cur))}. Change this on the job screen.</div>` : req.length ? `<details class="sec" data-sec="req" ${open.has("req")||!open.size?"open":""}><summary><b>Required screen photos</b><span class="st${st.reqDone===st.req?" done":""}" id="reqst">${st.reqDone}/${st.req}</span></summary>
     <div class="secbody"><p class="small muted" style="margin:0">The minimum for this checklist. Crop each to the display. These print at the end of the PDF, in this order, after the checklist pages.</p><div>${reqRows}</div></div></details>` : "";
   $("v-cl").innerHTML = `
-    <div class="progress"><div class="row"><span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>screen photos ${st.reqDone}/${st.req} · readings ${st.rdDone}/${st.rd}</span></div><span class="meter"><i style="width:${Math.round(100*st.done/Math.max(1,st.items))}%"></i></span></div>
+    <div class="progress"><div class="row"><span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>${noPh(cur)?"photos not permitted":`screen photos ${st.reqDone}/${st.req}`} · readings ${st.rdDone}/${st.rd}</span></div><span class="meter"><i style="width:${Math.round(100*st.done/Math.max(1,st.items))}%"></i></span></div>
     <div class="ppe">${esc(p.ppe)}</div>
     <div class="card"><div class="grid2"><div class="fld"><label for="cl-asset">Asset #</label><input id="cl-asset" value="${esc(cl.asset)}" autocapitalize="characters" autocomplete="off"></div>
       <div class="fld"><label>Checklist</label><div class="small" style="padding-top:6px">${esc(p.subtitle)}<br><span class="muted">pack ${esc(p.packVersion)}</span></div></div></div></div>
@@ -476,7 +485,7 @@ async function renderCL(){
       <button class="btn bad" type="button" id="cl-remove" style="justify-self:start">Remove this checklist…</button></div>`;
 }
 function refreshCLHeader(){ const st=clStats(cur,curCl); const pr=document.querySelector("#v-cl .progress"); if (!pr) return;
-  pr.querySelector(".row").innerHTML=`<span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>screen photos ${st.reqDone}/${st.req} · readings ${st.rdDone}/${st.rd}</span>`;
+  pr.querySelector(".row").innerHTML=`<span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>${noPh(cur)?"photos not permitted":`screen photos ${st.reqDone}/${st.req}`} · readings ${st.rdDone}/${st.rd}</span>`;
   pr.querySelector(".meter i").style.width=Math.round(100*st.done/Math.max(1,st.items))+"%";
   PACKS[curCl.pack].sections.forEach(s=>{ const d=document.querySelector(`#v-cl details[data-sec="${s.num}"] .st`); if (!d) return; const ss=secStatus(curCl,s); d.textContent=`${ss.txt} · 📷${ss.ph}`; d.classList.toggle("done",ss.full); }); }
 $("v-cl").addEventListener("change", async e=>{ const t=e.target, cl=curCl;
@@ -620,8 +629,9 @@ function baseName(j){ const kinds=[...new Set(j.checklists.map(c=>PACKS[c.pack].
 function openSend(){
   const j=cur; if (!j) return; const ws=woStats(j);
   const warn=[]; if (!ws.signed) warn.push("The Work Order is not fully signed.");
-  j.checklists.forEach(cl=>{ const s=clStats(j,cl); const name=PACKS[cl.pack].title+(cl.asset?" · "+cl.asset:""); if (s.done<s.items) warn.push(`${esc(name)}: ${s.items-s.done} line${s.items-s.done>1?"s":""} unchecked (explain in comments).`); if (s.reqDone<s.req){ const miss=reqList(cl).filter(r=>!reqPhotos(j,cl.id,r.id).length).map(r=>r.name); warn.push(`${esc(name)}: ${s.req-s.reqDone} required screen photo${s.req-s.reqDone>1?"s":""} missing (${esc(miss.slice(0,4).join("; "))}${miss.length>4?"; …":""}).`); }
+  j.checklists.forEach(cl=>{ const s=clStats(j,cl); const name=PACKS[cl.pack].title+(cl.asset?" · "+cl.asset:""); if (s.done<s.items) warn.push(`${esc(name)}: ${s.items-s.done} line${s.items-s.done>1?"s":""} unchecked (explain in comments).`); if (s.reqDone<s.req && !noPh(j)){ const miss=reqList(cl).filter(r=>!reqPhotos(j,cl.id,r.id).length).map(r=>r.name); warn.push(`${esc(name)}: ${s.req-s.reqDone} required screen photo${s.req-s.reqDone>1?"s":""} missing (${esc(miss.slice(0,4).join("; "))}${miss.length>4?"; …":""}).`); }
     if (s.certDone<s.certs) warn.push(`${esc(name)}: ${s.certs-s.certDone} section${s.certs-s.certDone>1?"s":""} not certified.`); });
+  if (noPh(j) && !(j.noPhotos.reason||"").trim()) warn.push("Photos not permitted is on, but no reason is given (job screen).");
   openSheet("Send job", `
     ${j.sends.length?`<div class="banner">Sent ${j.sends.length} time${j.sends.length>1?"s":""} so far. Each send is a complete copy of the whole job.</div>`:""}
     ${warn.length?`<div class="banner warn"><b>Not finished yet. That's fine for a progress send.</b><br>${warn.join("<br>")}</div>`:`<div class="banner ok"><b>Everything is filled in, certified and signed.</b></div>`}
@@ -656,6 +666,7 @@ function buildCsv(j){
   const push=o=>rows.push(head.map(h=>o[h]??""));
   WO_LEFT.concat(WO_RIGHT).forEach(([k,l])=>push({...base(j.wo.assets),record:"WORK_ORDER",item:l,value:j.wo[k]}));
   j.wo.rows.forEach((r,i)=>{ if (r.qty||r.type||r.desc) push({...base(j.wo.assets),record:"WORK_ORDER",item:"Row "+(i+1),value:[r.qty,r.type,r.desc].filter(Boolean).join(" | ")}); });
+  push({...base(j.wo.assets),record:"WORK_ORDER",item:"Photos",value:noPh(j)?"NOT PERMITTED":"Permitted",notes:noPh(j)?noPhText(j):""});
   push({...base(j.wo.assets),record:"WORK_ORDER",item:"Signed",value:(j.wo.sigTech?"S.P.I. rep "+j.wo.sigTech.date:"S.P.I. rep not signed")+"; "+(j.wo.sigCust?"customer "+j.wo.sigCust.date:"customer not signed")});
   if (j.wo.comments) push({...base(j.wo.assets),record:"WORK_ORDER",item:"Comments",notes:j.wo.comments});
   j.checklists.forEach(cl=>{ const p=PACKS[cl.pack], b=base(cl.asset,cl,p);
@@ -663,7 +674,7 @@ function buildCsv(j){
       (s.readings||[]).forEach(g=>g.fields.forEach(f=>push({...b,record:"READING",section:s.num,section_title:s.title,item:f.label,group:g.group,value:cl.readings[rkey(g,f)]||"",unit:f.unit})));
       if (s.cert) push({...b,record:"CERT",section:s.num,section_title:s.title,result:cl.cert[s.num]?"CERTIFIED":"NOT CERTIFIED"}); });
     if (cl.comments) push({...b,record:"COMMENT",notes:cl.comments});
-    reqList(cl).forEach(r=>{ const ps=reqPhotos(j,cl.id,r.id); push({...b,record:"PHOTO_REQUIRED",line:r.id.replace(/-.*/,""),item:r.name,group:r.mode,result:ps.length?"TAKEN":"MISSING",value:ps.length,notes:ps.map(x=>x.caption).filter(Boolean).join(" | ")}); });
+    reqList(cl).forEach(r=>{ const ps=reqPhotos(j,cl.id,r.id); push({...b,record:"PHOTO_REQUIRED",line:r.id.replace(/-.*/,""),item:r.name,group:r.mode,result:ps.length?"TAKEN":(noPh(j)?"NOT PERMITTED":"MISSING"),value:ps.length,notes:ps.map(x=>x.caption).filter(Boolean).join(" | ")}); });
     j.photos.filter(x=>x.cl===cl.id&&!x.req).forEach(x=>{ const sc=p.sections.find(z=>z.num===x.sec); push({...b,record:"PHOTO",section:x.sec||"",section_title:sc?sc.title:"",notes:x.caption||"",value:x.kb+" kB"}); }); });
   j.photos.filter(x=>!x.cl).forEach(x=>push({...base(j.wo.assets),record:"PHOTO",item:"Job photo",notes:x.caption||"",value:x.kb+" kB"}));
   return rows.map(r=>r.map(q).join(",")).join("\r\n")+"\r\n";
@@ -765,10 +776,11 @@ async function buildPdf(j){
     const extras=j.photos.filter(x=>x.cl===cl.id&&!x.req).sort((a,b)=>(a.sec||0)-(b.sec||0)||a.at-b.at);
     if (!req.length && !extras.length) continue;
     const reqDone=req.filter(r=>reqPhotos(j,cl.id,r.id).length).length;
+    if (noPh(j) && !reqDone && !extras.length) continue;
     hdr={title:"PHOTOS · "+p.title.toUpperCase(), sub:`Asset ${cl.asset||"—"} · ${w.site||""} · Job ${w.job||"—"}`, right:"Printing optional"}; newPage();
-    if (req.length){ rect(M,y-18,CW,18,"0.44 0.07 0.08",null); T(M+6,y-12.5,10,`REQUIRED SCREEN PHOTOS  ${reqDone} OF ${req.length}`,true,"1 1 1"); y-=26;
+    if (req.length){ rect(M,y-18,CW,18,"0.44 0.07 0.08",null); T(M+6,y-12.5,10,noPh(j)?`REQUIRED SCREEN PHOTOS: NOT PERMITTED AT THIS SITE (${reqDone} TAKEN)`:`REQUIRED SCREEN PHOTOS  ${reqDone} OF ${req.length}`,true,"1 1 1"); y-=26;
       const cards=[]; req.forEach(r=>{ const ps=reqPhotos(j,cl.id,r.id); const code=r.id.replace(/-.*/,"");
-        if (!ps.length) cards.push({label:`${code}  ${r.name}`, sub:`${r.mode} · ${r.path}`, photo:null});
+        if (!ps.length && !noPh(j)) cards.push({label:`${code}  ${r.name}`, sub:`${r.mode} · ${r.path}`, photo:null});
         ps.forEach((ph,i)=>cards.push({label:`${code}  ${r.name}${ps.length>1?` (${i+1})`:""}`, sub:`${r.mode} · ${stamp(ph.at)}`, note:ph.caption, photo:ph})); });
       await grid(cards); y-=6; }
     if (extras.length){ need(230); rect(M,y-18,CW,18,"0.44 0.07 0.08",null); T(M+6,y-12.5,10,`OTHER PHOTOS  ${extras.length}`,true,"1 1 1"); y-=26;
@@ -779,7 +791,8 @@ async function buildPdf(j){
     await grid(gp.map((ph,i)=>({label:`Job photo ${i+1}`, sub:stamp(ph.at), note:ph.caption, photo:ph}))); }
   { const P0=pages[0], hasPh=pages.length>=firstPhotoPage; P=P0;
     const msg = `This record: Work Order page 1${j.checklists.length?`; checklists pages 2-${firstPhotoPage-1}`:""}${hasPh?`; photos pages ${firstPhotoPage}-${pages.length} (printing optional)`:"; no photos"}.`;
-    T(M,woNoteY,8.5,msg,false,MUT); }
+    T(M,woNoteY,8.5,msg,false,MUT);
+    if (noPh(j)){ wrapW(noPhText(j)+".",CW,9,true).slice(0,2).forEach((ln,i)=>T(M,woNoteY-13-i*11,9,ln,true,"0.66 0.42 0")); } }
   // ---- write objects ----
   const parts=[]; let len=0; const offs=[]; const push=x=>{ const u=typeof x==="string"?L1(x):x; parts.push(u); len+=u.length; };
   let n=0; const alloc=()=>++n; const obj=(id,fn)=>{ offs[id]=len; push(`${id} 0 obj\n`); fn(); push("\nendobj\n"); };
