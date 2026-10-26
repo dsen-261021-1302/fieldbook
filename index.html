@@ -87,7 +87,17 @@ details.sec>summary b{font:600 19px/1.15 var(--f-display);text-transform:upperca
 details.sec>summary .st{font:600 12px var(--f-mono);white-space:nowrap;opacity:.95}
 details.sec>summary .st.done{background:rgba(255,255,255,.2);border-radius:4px;padding:2px 6px}
 .secbody{padding:10px 12px;display:grid;gap:10px}
-.secphotos{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--steel);border-radius:8px;padding:8px}
+.secphotos{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border:1px dashed var(--line);border-radius:8px;padding:8px}
+.secphotos .th{width:56px;height:56px}
+.req{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.req:first-of-type{border-top:0}
+.req .th{width:64px;height:64px}
+.req .ph0{width:64px;height:64px;border:2px dashed var(--amber);border-radius:6px;display:grid;place-items:center;color:var(--amber);font-size:22px}
+.req b{font-size:14.5px;display:block}
+.req .pth{font:500 12px var(--f-mono);color:var(--muted)}
+.req .acts{display:flex;gap:6px}
+.req .camb{min-height:40px;padding:0 10px}
+.modeh{font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--red);margin-top:8px}
 .secphotos .need{font-size:13px;color:var(--amber);font-weight:600}
 .th{width:76px;height:76px;border:0;border-radius:6px;background:var(--line) center/cover no-repeat;padding:0;cursor:pointer;position:relative}
 .th.warn::after{content:"!";position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:var(--amber);color:#fff;font:700 12px/18px var(--f-body)}
@@ -199,7 +209,7 @@ details.sec>summary .st.done{background:rgba(255,255,255,.2);border-radius:4px;p
 <script>
 (() => {
 "use strict";
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 const VDATE = "2026-10-26";
 const PACK_FILES = ["packs/g9k1m-sms.json"];
 const PHOTO_MAX = 80*1024;
@@ -319,15 +329,17 @@ function newJob(){ return {id:uid(), created:Date.now(), updated:Date.now(), app
   checklists:[], photos:[], sends:[], dirtyAt:Date.now()}; }
 function newChecklist(packId, asset){ const p=PACKS[packId]; return {id:uid(), pack:packId, packVersion:p.packVersion, title:p.title, asset:asset||"", items:{}, cert:{}, readings:{}, comments:"", added:Date.now()}; }
 function allPhotos(j){ return j.photos; }
-function photosFor(j, clId, sec){ return j.photos.filter(p=>p.cl===clId && p.sec===sec); }
+function photosFor(j, clId, sec){ return j.photos.filter(p=>p.cl===clId && p.sec===sec && !p.req); }
+function reqPhotos(j, clId, rid){ return j.photos.filter(p=>p.cl===clId && p.req===rid); }
+const reqList = cl => ((PACKS[cl.pack].photos||{}).required||[]);
 function changedSinceSend(j){ const last=j.sends.length?j.sends[j.sends.length-1].at:0; return (j.dirtyAt||j.updated) > last+1000; }
 function clStats(j, cl){
-  const p=PACKS[cl.pack]; let items=0, done=0, certs=0, certDone=0, secs=0, secPh=0, rd=0, rdDone=0;
+  const p=PACKS[cl.pack]; let items=0, done=0, certs=0, certDone=0, rd=0, rdDone=0;
   p.sections.forEach(s=>{ (s.items||[]).forEach(i=>{ items++; if (cl.items[i.line]&&cl.items[i.line].pass) done++; });
     if (s.cert){ certs++; if (cl.cert[s.num]) certDone++; }
-    if (s.photo){ secs++; if (photosFor(j,cl.id,s.num).length) secPh++; }
     (s.readings||[]).forEach(g=>g.fields.forEach(f=>{ rd++; if ((cl.readings[rkey(g,f)]||"").trim()) rdDone++; })); });
-  return {items,done,certs,certDone,secs,secPh,rd,rdDone};
+  const req=reqList(cl), reqDone=req.filter(r=>reqPhotos(j,cl.id,r.id).length).length, extra=j.photos.filter(p=>p.cl===cl.id&&!p.req).length;
+  return {items,done,certs,certDone,rd,rdDone,req:req.length,reqDone,extra};
 }
 const rkey = (g,f) => g.group+"|"+f.label+"|"+f.unit;
 function woStats(j){ const all=WO_LEFT.concat(WO_RIGHT); const filled=all.filter(([k])=>(j.wo[k]||"").trim()).length; return {filled,total:all.length,signed:!!(j.wo.sigTech&&j.wo.sigCust)}; }
@@ -368,7 +380,7 @@ function renderJob(){
   tiles.push(`<button class="tile" type="button" data-go="wo"><b>Work Order</b><span class="s">${ws.filled} of ${ws.total} fields · ${ws.signed?"signed ✓":(j.wo.sigTech||j.wo.sigCust?"1 of 2 signatures":"not signed")}</span><span class="meter"><i style="width:${Math.round(100*ws.filled/ws.total)}%"></i></span></button>`);
   j.checklists.forEach(cl=>{ const s=clStats(j,cl);
     tiles.push(`<button class="tile" type="button" data-go="cl" data-cl="${cl.id}"><b>${esc(PACKS[cl.pack]?PACKS[cl.pack].title:cl.title)}</b>
-      <span class="s">${esc(cl.asset||"No asset")} · ${s.done} of ${s.items} checked · CERT ${s.certDone}/${s.certs} · photos ${s.secPh}/${s.secs} sections</span><span class="meter"><i style="width:${Math.round(100*s.done/Math.max(1,s.items))}%"></i></span></button>`); });
+      <span class="s">${esc(cl.asset||"No asset")} · ${s.done} of ${s.items} checked · CERT ${s.certDone}/${s.certs} · screen photos ${s.reqDone}/${s.req}</span><span class="meter"><i style="width:${Math.round(100*s.done/Math.max(1,s.items))}%"></i></span></button>`); });
   tiles.push(`<button class="tile add" type="button" data-go="addcl"><b>+ Add checklist</b><span class="s">One per asset</span></button>`);
   const gp=j.photos.filter(p=>!p.cl).length;
   tiles.push(`<button class="tile photos" type="button" data-go="ph"><b>Photos</b><span class="s">${gp} job photo${gp===1?"":"s"} · damage, site, anything else</span></button>`);
@@ -436,32 +448,41 @@ async function renderCL(){
       <summary><b>${s.num}. ${esc(s.title)}</b><span class="st${ss.full?" done":""}">${esc(ss.txt)} · 📷${ss.ph}</span></summary>
       <div class="secbody">
         ${s.warning?`<div class="warnbox">${esc(s.warning)}</div>`:""}
-        <div class="secphotos">${thumbs}${phs.length?"":`<span class="need">Photo of this section's screen</span>`}
-          <label class="camb">📷 ${phs.length?"Add":"Take"} photo<input type="file" accept="image/*" capture="environment" data-shoot="${s.num}"></label>
-          <label class="camb up">Upload<input type="file" accept="image/*" multiple data-upload="${s.num}"></label></div>
+        <div class="secphotos">${thumbs}
+          <label class="camb up">📷 Extra photo<input type="file" accept="image/*" capture="environment" data-shoot="${s.num}"></label>
+          <label class="camb up">Upload<input type="file" accept="image/*" multiple data-upload="${s.num}"></label><span class="small muted">Optional. Prints at the end of the PDF, tagged to this section.</span></div>
         ${(s.items||[]).length?`<div class="items">${s.items.map(i=>{ const v=cl.items[i.line]||{};
           return `<div class="it${v.pass?" done":""}"><span class="ln">${i.line}</span><span class="tx">${esc(i.text)}</span><input class="nt" type="text" data-note="${i.line}" value="${esc(v.note||"")}" placeholder="Notes / setting" aria-label="Notes line ${i.line}"><input class="chk" type="checkbox" data-pass="${i.line}" ${v.pass?"checked":""} aria-label="Pass line ${i.line}"></div>`; }).join("")}</div>
           <button class="linkbtn" type="button" data-all="${s.num}">Mark all ${s.items.length} lines passed</button>`:""}
         ${(s.readings||[]).length?`<div class="rgrid">${s.readings.map(g=>`<div class="rg"><h4>${esc(g.group)}</h4>${g.fields.map(f=>`<label>${esc(f.label)}<input type="text" inputmode="decimal" data-rd="${esc(rkey(g,f))}" value="${esc(cl.readings[rkey(g,f)]||"")}"><span class="u">${esc(f.unit)}</span></label>`).join("")}</div>`).join("")}</div>`:""}
         ${s.cert?`<label class="cert"><span><b>CERT</b><br><span class="small">${esc(p.certText)}</span></span><input class="chk" type="checkbox" data-cert="${s.num}" ${cl.cert[s.num]?"checked":""} aria-label="Certify section ${s.num}"></label>`:""}
       </div></details>`; }));
+  const req=reqList(cl); let lastMode="";
+  const reqRows=(await Promise.all(req.map(async r=>{ const ps=reqPhotos(cur,cl.id,r.id); const head=r.mode!==lastMode?`<div class="modeh">${esc(r.mode)}</div>`:""; lastMode=r.mode;
+    const th=ps.length?`<button class="th${ps[0].q&&!ps[0].q.ok?" warn":""}" type="button" data-ph="${ps[0].id}" style="background-image:url('${await urlFor(ps[0].id)}')" aria-label="${esc(r.name)} photo"></button>`:`<span class="ph0">📷</span>`;
+    return head+`<div class="req">${th}<span><b>${esc(r.name)}</b><span class="pth">${esc(r.id.replace(/-.*/,""))} · ${esc(r.path)}${ps.length>1?` · ${ps.length} photos`:""}</span></span>
+      <span class="acts"><label class="camb${ps.length?" up":""}">${ps.length?"Add":"Take"}<input type="file" accept="image/*" capture="environment" data-rshoot="${esc(r.id)}"></label><label class="camb up">⇪<input type="file" accept="image/*" data-rup="${esc(r.id)}" aria-label="Upload ${esc(r.name)}"></label></span></div>`; }))).join("");
+  const reqHtml = req.length ? `<details class="sec" data-sec="req" ${open.has("req")||!open.size?"open":""}><summary><b>Required screen photos</b><span class="st${st.reqDone===st.req?" done":""}" id="reqst">${st.reqDone}/${st.req}</span></summary>
+    <div class="secbody"><p class="small muted" style="margin:0">The minimum for this checklist. Crop each to the display. These print at the end of the PDF, in this order, after the checklist pages.</p><div>${reqRows}</div></div></details>` : "";
   $("v-cl").innerHTML = `
-    <div class="progress"><div class="row"><span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>photos ${st.secPh}/${st.secs} · readings ${st.rdDone}/${st.rd}</span></div><span class="meter"><i style="width:${Math.round(100*st.done/Math.max(1,st.items))}%"></i></span></div>
+    <div class="progress"><div class="row"><span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>screen photos ${st.reqDone}/${st.req} · readings ${st.rdDone}/${st.rd}</span></div><span class="meter"><i style="width:${Math.round(100*st.done/Math.max(1,st.items))}%"></i></span></div>
     <div class="ppe">${esc(p.ppe)}</div>
     <div class="card"><div class="grid2"><div class="fld"><label for="cl-asset">Asset #</label><input id="cl-asset" value="${esc(cl.asset)}" autocapitalize="characters" autocomplete="off"></div>
       <div class="fld"><label>Checklist</label><div class="small" style="padding-top:6px">${esc(p.subtitle)}<br><span class="muted">pack ${esc(p.packVersion)}</span></div></div></div></div>
+    ${reqHtml}
     ${secs.join("")}
     <div class="card"><h2>Technician comments</h2><div class="fld"><textarea id="cl-comments" placeholder="Anything about this unit. Explain any line that isn't checked.">${esc(cl.comments)}</textarea></div>
       <p class="small muted" style="margin:0">Signatures come from the Work Order.</p>
       <button class="btn bad" type="button" id="cl-remove" style="justify-self:start">Remove this checklist…</button></div>`;
 }
 function refreshCLHeader(){ const st=clStats(cur,curCl); const pr=document.querySelector("#v-cl .progress"); if (!pr) return;
-  pr.querySelector(".row").innerHTML=`<span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>photos ${st.secPh}/${st.secs} · readings ${st.rdDone}/${st.rd}</span>`;
+  pr.querySelector(".row").innerHTML=`<span><b>${st.done}</b> of ${st.items} checked · CERT ${st.certDone}/${st.certs}</span><span>screen photos ${st.reqDone}/${st.req} · readings ${st.rdDone}/${st.rd}</span>`;
   pr.querySelector(".meter i").style.width=Math.round(100*st.done/Math.max(1,st.items))+"%";
   PACKS[curCl.pack].sections.forEach(s=>{ const d=document.querySelector(`#v-cl details[data-sec="${s.num}"] .st`); if (!d) return; const ss=secStatus(curCl,s); d.textContent=`${ss.txt} · 📷${ss.ph}`; d.classList.toggle("done",ss.full); }); }
 $("v-cl").addEventListener("change", async e=>{ const t=e.target, cl=curCl;
   if (t.dataset.pass){ const v=cl.items[t.dataset.pass]||(cl.items[t.dataset.pass]={}); v.pass=t.checked; t.closest(".it").classList.toggle("done",t.checked); saveSoon(); refreshCLHeader(); }
   if (t.dataset.cert){ cl.cert[t.dataset.cert]=t.checked; saveSoon(); refreshCLHeader(); }
+  if ((t.dataset.rshoot||t.dataset.rup) && t.files.length){ const f=t.files[0]; t.value=""; const sec=PACKS[cl.pack].sections; cropFlow(f, {cl:cl.id, sec:null, req:t.dataset.rshoot||t.dataset.rup}); return; }
   if (t.dataset.shoot && t.files.length){ const f=t.files[0]; t.value=""; cropFlow(f, {cl:cl.id, sec:+t.dataset.shoot}); }
   if (t.dataset.upload && t.files.length){ const fs=[...t.files]; t.value=""; if (fs.length===1) cropFlow(fs[0],{cl:cl.id,sec:+t.dataset.upload}); else { busy(true,"Adding photos…"); for (const f of fs) await addPhoto(f,null,{cl:cl.id,sec:+t.dataset.upload}); busy(false); renderCL(); toast(`Added ${fs.length} photos`); } }
 });
@@ -513,7 +534,7 @@ window.addEventListener("resize", ()=>crop&&layoutCrop());
 async function addPhoto(file, cr, where, imgIn){
   const img=imgIn||await loadImg(file); const pr=await makePhoto(img, cr);
   const id=uid(); await db.putBlob(id, pr.blob);
-  const ph={id, at:Date.now(), w:pr.w, h:pr.h, kb:pr.kb, q:pr.q, caption:"", cl:where?where.cl:null, sec:where?where.sec:null};
+  const ph={id, at:Date.now(), w:pr.w, h:pr.h, kb:pr.kb, q:pr.q, caption:"", cl:where?where.cl:null, sec:where?where.sec:null, req:where&&where.req?where.req:null};
   cur.photos.push(ph); cur.dirtyAt=Date.now(); await db.saveJob(cur); return ph;
 }
 async function finishCrop(useCrop){
@@ -529,16 +550,22 @@ async function finishCrop(useCrop){
 let openPhotoId=null;
 async function openPhotoSheet(pid){
   const p=cur.photos.find(x=>x.id===pid); if (!p) return; openPhotoId=pid;
-  const where = p.cl ? (()=>{ const cl=cur.checklists.find(c=>c.id===p.cl); const s=cl&&PACKS[cl.pack].sections.find(x=>x.num===p.sec); return s?`Section ${s.num}. ${s.title}`:"Checklist photo"; })() : "Job photo";
+  const where = photoLabel(cur,p);
   openSheet(where, `
     <div class="preview" id="prev"><img src="${await urlFor(p.id)}" alt="Photo"></div>
     <div class="small muted">${esc(stamp(p.at))} · ${p.kb} kB · ${p.w}×${p.h}</div>
     ${p.q.ok?`<div class="qrow good"><b>Looks OK.</b> Tap the photo to zoom and check you can read it.</div>`:p.q.issues.map(s=>`<div class="qrow warn"><b>Check:</b> ${esc(s)}</div>`).join("")}
-    <div class="fld"><label for="p-cap">Caption (optional)</label><textarea id="p-cap" placeholder="What does this show?">${esc(p.caption||"")}</textarea></div>
+    <div class="fld"><label for="p-cap">Notes (optional, print with the photo)</label><textarea id="p-cap" placeholder="What does this show? Anything odd?">${esc(p.caption||"")}</textarea></div>
     <div class="row"><label class="btn red" for="p-retake">Retake<input id="p-retake" type="file" accept="image/*" capture="environment"></label>
       <button class="btn bad" type="button" id="p-del">Delete photo</button><span id="p-delask" hidden>Sure? <button class="btn bad" type="button" id="p-delyes">Delete</button></span></div>`);
 }
 
+function photoLabel(j,p){
+  if (!p.cl) return "Job photo";
+  const cl=j.checklists.find(c=>c.id===p.cl); if (!cl) return "Checklist photo"; const pk=PACKS[cl.pack];
+  if (p.req){ const r=reqList(cl).find(x=>x.id===p.req); return r?`${r.id.replace(/-.*/,"")} ${r.name}`:"Screen photo"; }
+  const s=pk.sections.find(x=>x.num===p.sec); return s?`From section ${s.num}. ${s.title}`:"Checklist photo";
+}
 // ---------- Photos module (job photos) ----------
 function openPH(){ setView("ph"); setTitle("Photos", jobTitle(cur)); renderPH(); }
 async function renderPH(){
@@ -581,7 +608,7 @@ $("sheet").addEventListener("click", async e=>{
   if (t.id==="doShare"||t.id==="doPdf"||t.id==="doCsv") return doSend(t.id);
 });
 $("sheet").addEventListener("change", async e=>{ const t=e.target;
-  if (t.id==="p-retake" && t.files.length){ const p=cur.photos.find(x=>x.id===openPhotoId); const f=t.files[0]; const where=p.cl?{cl:p.cl,sec:p.sec}:null;
+  if (t.id==="p-retake" && t.files.length){ const p=cur.photos.find(x=>x.id===openPhotoId); const f=t.files[0]; const where=p.cl?{cl:p.cl,sec:p.sec,req:p.req}:null;
     cur.photos=cur.photos.filter(x=>x.id!==p.id); await db.delBlob(p.id); openPhotoId=null; cropFlow(f, where); }
   if (t.id==="fin-ok"){ const b=$("fin-yes"); b.disabled=!t.checked; }
 });
@@ -593,7 +620,8 @@ function baseName(j){ const kinds=[...new Set(j.checklists.map(c=>PACKS[c.pack].
 function openSend(){
   const j=cur; if (!j) return; const ws=woStats(j);
   const warn=[]; if (!ws.signed) warn.push("The Work Order is not fully signed.");
-  j.checklists.forEach(cl=>{ const s=clStats(j,cl); const name=PACKS[cl.pack].title+(cl.asset?" · "+cl.asset:""); if (s.done<s.items) warn.push(`${esc(name)}: ${s.items-s.done} line${s.items-s.done>1?"s":""} unchecked (explain in comments).`); if (s.certDone<s.certs) warn.push(`${esc(name)}: ${s.certs-s.certDone} section${s.certs-s.certDone>1?"s":""} not certified.`); });
+  j.checklists.forEach(cl=>{ const s=clStats(j,cl); const name=PACKS[cl.pack].title+(cl.asset?" · "+cl.asset:""); if (s.done<s.items) warn.push(`${esc(name)}: ${s.items-s.done} line${s.items-s.done>1?"s":""} unchecked (explain in comments).`); if (s.reqDone<s.req){ const miss=reqList(cl).filter(r=>!reqPhotos(j,cl.id,r.id).length).map(r=>r.name); warn.push(`${esc(name)}: ${s.req-s.reqDone} required screen photo${s.req-s.reqDone>1?"s":""} missing (${esc(miss.slice(0,4).join("; "))}${miss.length>4?"; …":""}).`); }
+    if (s.certDone<s.certs) warn.push(`${esc(name)}: ${s.certs-s.certDone} section${s.certs-s.certDone>1?"s":""} not certified.`); });
   openSheet("Send job", `
     ${j.sends.length?`<div class="banner">Sent ${j.sends.length} time${j.sends.length>1?"s":""} so far. Each send is a complete copy of the whole job.</div>`:""}
     ${warn.length?`<div class="banner warn"><b>Not finished yet. That's fine for a progress send.</b><br>${warn.join("<br>")}</div>`:`<div class="banner ok"><b>Everything is filled in, certified and signed.</b></div>`}
@@ -633,9 +661,11 @@ function buildCsv(j){
   j.checklists.forEach(cl=>{ const p=PACKS[cl.pack], b=base(cl.asset,cl,p);
     p.sections.forEach(s=>{ (s.items||[]).forEach(i=>{ const v=cl.items[i.line]||{}; push({...b,record:"ITEM",section:s.num,section_title:s.title,line:i.line,item:i.text,result:v.pass?"PASS":"OPEN",notes:v.note||""}); });
       (s.readings||[]).forEach(g=>g.fields.forEach(f=>push({...b,record:"READING",section:s.num,section_title:s.title,item:f.label,group:g.group,value:cl.readings[rkey(g,f)]||"",unit:f.unit})));
-      if (s.cert) push({...b,record:"CERT",section:s.num,section_title:s.title,result:cl.cert[s.num]?"CERTIFIED":"NOT CERTIFIED"});
-      const n=photosFor(j,cl.id,s.num).length; if (s.photo) push({...b,record:"PHOTOS",section:s.num,section_title:s.title,value:n}); });
-    if (cl.comments) push({...b,record:"COMMENT",notes:cl.comments}); });
+      if (s.cert) push({...b,record:"CERT",section:s.num,section_title:s.title,result:cl.cert[s.num]?"CERTIFIED":"NOT CERTIFIED"}); });
+    if (cl.comments) push({...b,record:"COMMENT",notes:cl.comments});
+    reqList(cl).forEach(r=>{ const ps=reqPhotos(j,cl.id,r.id); push({...b,record:"PHOTO_REQUIRED",line:r.id.replace(/-.*/,""),item:r.name,group:r.mode,result:ps.length?"TAKEN":"MISSING",value:ps.length,notes:ps.map(x=>x.caption).filter(Boolean).join(" | ")}); });
+    j.photos.filter(x=>x.cl===cl.id&&!x.req).forEach(x=>{ const sc=p.sections.find(z=>z.num===x.sec); push({...b,record:"PHOTO",section:x.sec||"",section_title:sc?sc.title:"",notes:x.caption||"",value:x.kb+" kB"}); }); });
+  j.photos.filter(x=>!x.cl).forEach(x=>push({...base(j.wo.assets),record:"PHOTO",item:"Job photo",notes:x.caption||"",value:x.kb+" kB"}));
   return rows.map(r=>r.map(q).join(",")).join("\r\n")+"\r\n";
 }
 
@@ -685,7 +715,7 @@ async function buildPdf(j){
   const sigT=await sigJpeg(w.sigTech), sigC=await sigJpeg(w.sigCust);
   const sigBox=(x,label,sig,s)=>{ rect(x,y-96,half-8,96,null,LINE); T(x+6,y-14,8.5,label,true); if (sig){ const nm=imgRef(sig); const bh=60, bw=Math.min(half-24, bh*sig.w/sig.h); img(nm,x+8,y-82,bw,bh); } T(x+6,y-91,8.5,"DATE: "+(s?s.date:""),true); };
   sigBox(M,"S.P.I. REP SIGNATURE:",sigT,w.sigTech); sigBox(M+half+8,"CUSTOMER SIGNATURE:",sigC,w.sigCust); y-=110;
-  T(M,y,9,WO_ACK,true); y-=14;
+  T(M,y,9,WO_ACK,true); y-=14; const woNoteY=y-8;
   // ---- Checklists ----
   for (const cl of j.checklists){ const p=PACKS[cl.pack];
     const info=[["Asset #",cl.asset],["Site Name",w.site],["Job #",w.job],["Date",w.dateStarted],["Technician",w.techs],["Site Address",w.address]];
@@ -709,12 +739,6 @@ async function buildPdf(j){
           g.fields.forEach((f,fi)=>{ const yy=rowTop-14-13*(fi+1)+3; T(x+6,yy,8.5,f.label); const val=cl.readings[rkey(g,f)]||""; TR(x+gw-44,yy,9,val,true); T(x+gw-38,yy,8,f.unit,false,MUT); });
           rowH=Math.max(rowH,h); if (gi%2===1||gi===s.readings.length-1){ y=rowTop-rowH-6; } }); }
       if (s.cert){ if (y-22<M+22){ newPage(); band(true); } rect(M,y-20,CW,20,"0.99 0.95 0.86",LINE); T(M+5,y-13.5,8,"CERT",true,"0.66 0.42 0"); T(M+36,y-13.5,8,p.certText); box(M+CW-cPs+10,y-16.5,13,!!cl.cert[s.num]); y-=20; }
-      const phs=photosFor(j,cl.id,s.num);
-      for (let i=0;i<phs.length;i+=2){ const pair=phs.slice(i,i+2); const pw=(CW-12)/2, ph=Math.min(230, Math.max(...pair.map(p=>pw*p.h/p.w)));
-        need(ph+28); for (let k=0;k<pair.length;k++){ const p_=pair[k]; const bytes=await jpegOf(p_.id); const nm=imgRef({bytes,w:p_.w,h:p_.h}); const sc=Math.min(pw/p_.w, ph/p_.h); const iw=p_.w*sc, ih=p_.h*sc; const x=M+k*(pw+12)+(pw-iw)/2;
-          img(nm,x,y-6-ih,iw,ih); T(M+k*(pw+12),y-ph-17,7.5,`Section ${s.num} photo ${i+k+1} · ${stamp(p_.at)}${p_.caption?" · "+p_.caption:""}`.slice(0,95),false,MUT); }
-        y-=ph+24; }
-      if (!phs.length && s.photo){ need(14); T(M+4,y-10,7.5,`No photo for section ${s.num}.`,false,"0.66 0.42 0"); y-=14; }
       y-=8;
     }
     // comments + signatures (mirrored from the Work Order)
@@ -723,12 +747,39 @@ async function buildPdf(j){
     rect(M,y-18,CW,18,"0.44 0.07 0.08",null); T(M+6,y-12.5,10,"SIGNATURE BLOCK",true,"1 1 1"); y-=26;
     sigBox(M,"TECHNICIAN SIGNATURE:",sigT,w.sigTech); sigBox(M+half+8,"CUSTOMER SIGNATURE:",sigC,w.sigCust); y-=104;
   }
-  // ---- Job photos ----
+  // ---- Photos: all at the end, so checklist pages are identical on every job ----
+  const firstPhotoPage=pages.length+1;
+  const grid=async (cards)=>{ // cards: {label, sub, note, photo|null}
+    const gap=14, cw=(CW-gap)/2, ih=160;
+    for (let i=0;i<cards.length;i+=2){ const pair=cards.slice(i,i+2);
+      const nl=pair.map(c=>wrapW(c.note||"",cw,8.5).slice(0,3)); const nmax=Math.max(...nl.map(x=>x.length)); const rh=26+ih+(nmax?nmax*10.5+6:0)+12;
+      need(rh);
+      for (let k=0;k<pair.length;k++){ const c=pair[k], x=M+k*(cw+gap);
+        T(x,y-10,9,wrapW(c.label,cw,9,true)[0]||"",true); T(x,y-21,7.5,wrapW(c.sub||"",cw,7.5)[0]||"",false,MUT);
+        const top=y-26;
+        if (c.photo){ const p_=c.photo; const bytes=await jpegOf(p_.id); const nm=imgRef({bytes,w:p_.w,h:p_.h}); const sc=Math.min(cw/p_.w, ih/p_.h); const iw=p_.w*sc, h_=p_.h*sc; img(nm,x+(cw-iw)/2,top-h_,iw,h_); }
+        else { rect(x,top-ih,cw,ih,"0.99 0.95 0.86","0.66 0.42 0"); const m="MISSING: NOT TAKEN"; T(x+(cw-textW(m,10,true))/2,top-ih/2-4,10,m,true,"0.66 0.42 0"); }
+        nl[k].forEach((ln,li)=>T(x,top-ih-14-li*10.5,8.5,ln,false,"0.11 0.37 0.66")); }
+      y-=rh; } };
+  for (const cl of j.checklists){ const p=PACKS[cl.pack]; const req=reqList(cl);
+    const extras=j.photos.filter(x=>x.cl===cl.id&&!x.req).sort((a,b)=>(a.sec||0)-(b.sec||0)||a.at-b.at);
+    if (!req.length && !extras.length) continue;
+    const reqDone=req.filter(r=>reqPhotos(j,cl.id,r.id).length).length;
+    hdr={title:"PHOTOS · "+p.title.toUpperCase(), sub:`Asset ${cl.asset||"—"} · ${w.site||""} · Job ${w.job||"—"}`, right:"Printing optional"}; newPage();
+    if (req.length){ rect(M,y-18,CW,18,"0.44 0.07 0.08",null); T(M+6,y-12.5,10,`REQUIRED SCREEN PHOTOS  ${reqDone} OF ${req.length}`,true,"1 1 1"); y-=26;
+      const cards=[]; req.forEach(r=>{ const ps=reqPhotos(j,cl.id,r.id); const code=r.id.replace(/-.*/,"");
+        if (!ps.length) cards.push({label:`${code}  ${r.name}`, sub:`${r.mode} · ${r.path}`, photo:null});
+        ps.forEach((ph,i)=>cards.push({label:`${code}  ${r.name}${ps.length>1?` (${i+1})`:""}`, sub:`${r.mode} · ${stamp(ph.at)}`, note:ph.caption, photo:ph})); });
+      await grid(cards); y-=6; }
+    if (extras.length){ need(230); rect(M,y-18,CW,18,"0.44 0.07 0.08",null); T(M+6,y-12.5,10,`OTHER PHOTOS  ${extras.length}`,true,"1 1 1"); y-=26;
+      await grid(extras.map(ph=>{ const sc=p.sections.find(x=>x.num===ph.sec); return {label: sc?`From section ${sc.num}. ${sc.title}`:"Checklist photo", sub:stamp(ph.at), note:ph.caption, photo:ph}; })); }
+  }
   const gp=j.photos.filter(p=>!p.cl);
-  if (gp.length){ hdr={title:"JOB PHOTOS", sub:`${w.site||""} · Job ${w.job||"—"}`, right:`${gp.length} photo${gp.length===1?"":"s"}`}; newPage();
-    for (let i=0;i<gp.length;i++){ const p_=gp[i]; const cap=wrapW(p_.caption||"",CW,9).slice(0,3); const maxH=300; const sc=Math.min(CW/p_.w, maxH/p_.h); const iw=p_.w*sc, ih=p_.h*sc;
-      need(ih+30+cap.length*11); const bytes=await jpegOf(p_.id); const nm=imgRef({bytes,w:p_.w,h:p_.h}); img(nm,M+(CW-iw)/2,y-ih,iw,ih); y-=ih+12;
-      T(M,y,8.5,`Photo ${i+1} · ${stamp(p_.at)}`,true,MUT); y-=11; cap.forEach(ln=>{ T(M,y,9,ln); y-=11; }); y-=10; } }
+  if (gp.length){ hdr={title:"JOB PHOTOS", sub:`${w.site||""} · Job ${w.job||"—"}`, right:"Printing optional"}; newPage();
+    await grid(gp.map((ph,i)=>({label:`Job photo ${i+1}`, sub:stamp(ph.at), note:ph.caption, photo:ph}))); }
+  { const P0=pages[0], hasPh=pages.length>=firstPhotoPage; P=P0;
+    const msg = `This record: Work Order page 1${j.checklists.length?`; checklists pages 2-${firstPhotoPage-1}`:""}${hasPh?`; photos pages ${firstPhotoPage}-${pages.length} (printing optional)`:"; no photos"}.`;
+    T(M,woNoteY,8.5,msg,false,MUT); }
   // ---- write objects ----
   const parts=[]; let len=0; const offs=[]; const push=x=>{ const u=typeof x==="string"?L1(x):x; parts.push(u); len+=u.length; };
   let n=0; const alloc=()=>++n; const obj=(id,fn)=>{ offs[id]=len; push(`${id} 0 obj\n`); fn(); push("\nendobj\n"); };
@@ -774,9 +825,11 @@ async function demoJob(){
     (s.readings||[]).forEach(g=>g.fields.forEach(f=>cl.readings[rkey(g,f)]= f.unit==="VAC"?"480":f.unit==="AAC"?"612":f.unit==="VDC"?"540":f.unit==="ADC"?"9":f.unit==="kVA"?"508":"497")); });
   cl.comments="Lines 17, 34, 51, 68 and 85 left open on purpose (demo). Section 4 not certified (demo).";
   cur=j;
-  for (const s of p.sections.slice(0,4)){ const c=document.createElement("canvas"); c.width=1200; c.height=900; const g=c.getContext("2d"); g.fillStyle="#1c2733"; g.fillRect(0,0,1200,900); g.fillStyle="#cfe3ff"; g.font="bold 64px monospace";
-    g.fillText("SYNTHETIC SCREEN", 80, 140); g.font="48px monospace"; for (let r=0;r<10;r++) g.fillText(`No.${100+r*7} : ${1000+r*37} -> ${1010+r*37}`, 80, 240+r*60); g.fillText(`Section ${s.num}`, 80, 860);
-    const b=await new Promise(r=>c.toBlob(r,"image/jpeg",0.9)); await addPhoto(b,null,{cl:cl.id,sec:s.num}); }
+  const shot=async (title)=>{ const c=document.createElement("canvas"); c.width=1200; c.height=900; const g=c.getContext("2d"); g.fillStyle="#1c2733"; g.fillRect(0,0,1200,900); g.fillStyle="#cfe3ff"; g.font="bold 56px monospace";
+    g.fillText("SYNTHETIC SCREEN", 80, 130); g.font="44px monospace"; for (let r=0;r<10;r++) g.fillText(`No.${100+r*7} : ${1000+r*37} -> ${1010+r*37}`, 80, 230+r*58); g.fillText(title.slice(0,40), 80, 860);
+    return await new Promise(r=>c.toBlob(r,"image/jpeg",0.9)); };
+  const req=reqList(cl); for (const r of req.slice(0,12)) await addPhoto(await shot(r.id+" "+r.name),null,{cl:cl.id,sec:null,req:r.id});
+  const ex=await addPhoto(await shot("Section 4 extra"),null,{cl:cl.id,sec:4}); ex.caption="Demo: extra photo tagged to section 4."; 
   await db.saveJob(j); busy(false); toast("Ah... just one more thing... Demo job created.",4000); openJob(j.id);
 }
 

@@ -5,7 +5,7 @@
  "title": "G9K1M SMS Startup Checklist",
  "subtitle": "Toshiba G9000 1000kVA SMS",
  "kind": "startup",
- "packVersion": "1.0.0",
+ "packVersion": "1.1.0",
  "packDate": "2026-10-26",
  "source": "Toshiba Checklists Master File v1.3.0 (2026-10-05), SHA-256 5df1efb48a3084c21aa5d87c169a10c182721831c4989c7dde2bf207b9ceb6b9 — content extracted by script, not retyped",
  "ppe": "PPE REQUIRED: SAFETY GLASSES, EH SAFETY BOOTS, PROPER GLOVES, AND FLAME-RESISTANT UNIFORM",
@@ -60,7 +60,6 @@
      "text": "Close RIB and BIB; keep MBB and MIB open"
     }
    ],
-   "photo": true,
    "cert": true
   },
   {
@@ -144,7 +143,6 @@
      "text": "Detection Timer Minor / Major"
     }
    ],
-   "photo": true,
    "cert": true
   },
   {
@@ -196,7 +194,6 @@
      "text": "Verify test pulses with pre-charge voltages on all three sections"
     }
    ],
-   "photo": true,
    "cert": true
   },
   {
@@ -268,7 +265,6 @@
      "text": "Update date, time and time zone"
     }
    ],
-   "photo": true,
    "cert": true
   },
   {
@@ -328,7 +324,6 @@
      "text": "HVAC startup checks complete"
     }
    ],
-   "photo": true,
    "cert": true
   },
   {
@@ -408,7 +403,6 @@
      "text": "OBSD — On-board sensor deviation"
     }
    ],
-   "photo": true,
    "cert": true
   },
   {
@@ -437,7 +431,6 @@
     }
    ],
    "warning": "STOP — DISCUSS CRITICAL LOAD TRANSFER WITH THE CUSTOMER",
-   "photo": true,
    "cert": true
   },
   {
@@ -533,7 +526,6 @@
      ]
     }
    ],
-   "photo": true,
    "cert": false
   },
   {
@@ -561,8 +553,103 @@
      "text": "Record all critical load and UPS data through Sensaphone web page and save screenshot"
     }
    ],
-   "photo": true,
    "cert": true
   }
- ]
+ ],
+ "photos": {
+  "note": "Minimum screen photos for this checklist. More photos are always allowed.",
+  "source": "TMEIC L300 LCD Screen Tree, DWG 3JAA0004 (2014-03-10)",
+  "required": [
+   {
+    "id": "B0100",
+    "name": "Main",
+    "path": "MAIN tab",
+    "mode": "Normal mode"
+   },
+   {
+    "id": "B0200-IN",
+    "name": "Measurement [Input]",
+    "path": "MEASUREMENT tab",
+    "mode": "Normal mode"
+   },
+   {
+    "id": "B0200-OUT",
+    "name": "Measurement [Output]",
+    "path": "MEASUREMENT tab → OUTPUT",
+    "mode": "Normal mode"
+   },
+   {
+    "id": "B0810",
+    "name": "Specification (rated kVA)",
+    "path": "VERSION tab → VERSION",
+    "mode": "Maintenance mode"
+   },
+   {
+    "id": "B0820",
+    "name": "Software Version",
+    "path": "VERSION tab → SOFTWARE VERSION",
+    "mode": "Maintenance mode"
+   },
+   {
+    "id": "B0821",
+    "name": "Software Version (UPS)",
+    "path": "SOFTWARE VERSION → DETAIL",
+    "mode": "Maintenance mode"
+   },
+   {
+    "id": "B0480-MM",
+    "name": "Module Measurement",
+    "path": "STATUS tab → MOD. STATUS → MOD. MEASURE.",
+    "mode": "Maintenance mode"
+   },
+   {
+    "id": "B0914",
+    "name": "Setup 1 (1/6): Battery AH, float, charge rate",
+    "path": "SETUP → SETUP1, page 1/6",
+    "mode": "Test mode"
+   },
+   {
+    "id": "B0915",
+    "name": "Setup 1 (2/6): Battery final / warning volts",
+    "path": "SETUP1 ▼ page 2/6",
+    "mode": "Test mode"
+   },
+   {
+    "id": "B0916",
+    "name": "Setup 1 (3/6): CNV delay, inhibit transfer, system select",
+    "path": "SETUP1 ▼ page 3/6",
+    "mode": "Test mode"
+   },
+   {
+    "id": "B0917",
+    "name": "Setup 1 (4/6): Sync range, out volt, slew, float adj",
+    "path": "SETUP1 ▼ page 4/6",
+    "mode": "Test mode"
+   },
+   {
+    "id": "B0940",
+    "name": "Setup 1 (5/6): IR comp, power demand, bypass alarm",
+    "path": "SETUP1 ▼ page 5/6",
+    "mode": "Test mode"
+   },
+   {
+    "id": "B0941",
+    "name": "Setup 1 (6/6): Ground fault",
+    "path": "SETUP1 ▼ page 6/6",
+    "mode": "Test mode"
+   },
+   {
+    "id": "B0920",
+    "name": "Setup 2 (1/2): Equipment #, module #, battery, frequency",
+    "path": "SETUP → SETUP2, page 1/2",
+    "mode": "Test mode"
+   },
+   {
+    "id": "B0921",
+    "name": "Setup 2 (2/2): Equalizing charge",
+    "path": "SETUP2 ▼ page 2/2",
+    "mode": "Test mode"
+   }
+  ]
+ }
 }

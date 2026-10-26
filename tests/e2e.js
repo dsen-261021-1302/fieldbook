@@ -1,4 +1,4 @@
-const { chromium } = require('playwright') /* npm i playwright */;
+const { chromium } = require('playwright');
 const S = process.argv[2], OUT = process.argv[3];
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell' });
@@ -24,10 +24,10 @@ const S = process.argv[2], OUT = process.argv[3];
   await pg.click('#back'); await pg.waitForSelector('#tiles');
   // add checklist
   await pg.click('[data-go=addcl]'); ok(await pg.inputValue('#a-asset') === 'TRL052', 'asset prefilled from WO'); await pg.click('#a-go'); await pg.waitForSelector('details.sec');
-  ok((await pg.$$('details.sec')).length === 9, '9 sections rendered');
+  ok((await pg.$$('details.sec:not([data-sec=req])')).length === 9, '9 sections rendered');
   ok((await pg.$$('[data-pass]')).length === 98, '98 lines rendered');
   // section 1: shoot big photo -> crop
-  const fi = await pg.$('[data-shoot="1"]'); await fi.setInputFiles(S + '/fbtest/big.jpg'); await pg.waitForSelector('#cbox');
+  const fi = await pg.$('[data-rshoot="B0100"]'); await fi.setInputFiles(S + '/fbtest/big.jpg'); await pg.waitForSelector('#cbox');
   await pg.waitForTimeout(300); await pg.screenshot({ path: OUT + '/03_crop.png' });
   const h = await pg.$('#cbox .h[data-h="tl"]'); const hb = await h.boundingBox(); await pg.mouse.move(hb.x + 17, hb.y + 17); await pg.mouse.down(); await pg.mouse.move(hb.x + 60, hb.y + 50, { steps: 5 }); await pg.mouse.up();
   await pg.click('#c-crop'); await pg.waitForSelector('[data-ph]', { timeout: 20000 });
@@ -35,9 +35,9 @@ const S = process.argv[2], OUT = process.argv[3];
   ok(st.length === 1 && st[0].kb <= 80, 'cropped big photo compressed to ' + JSON.stringify(st));
   // upload 2 for section 2 and one each for 3..9
   await (await pg.$('[data-upload="2"]')).setInputFiles([S + '/photos/p02_80k.jpg', S + '/photos/p03_80k.jpg']); await pg.waitForFunction(() => FieldBook.current().photos.length === 3, null, { timeout: 20000 });
-  for (let s = 3; s <= 9; s++) { await pg.evaluate(s => document.querySelector(`details[data-sec="${s}"]`).open = true, s);
-    await (await pg.$(`[data-shoot="${s}"]`)).setInputFiles(S + `/photos/p${String(s).padStart(2, '0')}_80k.jpg`); await pg.waitForSelector('#c-full'); await pg.click('#c-full');
-    await pg.waitForFunction(n => FieldBook.current().photos.length === n, s + 1, { timeout: 20000 }); }
+  const ids = ['B0200-IN','B0200-OUT','B0810','B0820','B0821','B0480-MM','B0914','B0915','B0916','B0917'];
+  for (let i = 0; i < ids.length; i++) { await (await pg.$(`[data-rshoot="${ids[i]}"]`)).setInputFiles(S + `/photos/p${String(i % 10 + 1).padStart(2, '0')}_80k.jpg`); await pg.waitForSelector('#c-full'); await pg.click('#c-full');
+    await pg.waitForFunction(n => FieldBook.current().photos.length === n, i + 4, { timeout: 20000 }); }
   // check all lines via mark-all, except line 50; certs except 4; readings
   for (let s = 1; s <= 9; s++) { await pg.evaluate(s => document.querySelector(`details[data-sec="${s}"]`).open = true, s); const a = await pg.$(`[data-all="${s}"]`); if (a) { await a.click(); await pg.waitForTimeout(150); } }
   ok((await pg.evaluate(() => Object.values(FieldBook.current().checklists[0].cert).filter(Boolean).length)) === 0, 'mark-all never sets CERT');
@@ -47,7 +47,7 @@ const S = process.argv[2], OUT = process.argv[3];
   const rds = await pg.$$('[data-rd]'); for (let i = 0; i < rds.length; i++) await rds[i].fill(String(470 + i));
   await pg.fill('#cl-comments', 'Line 50 open: waiting on customer. Section 4 not certified.');
   await pg.waitForTimeout(600);
-  const prog = await pg.textContent('#v-cl .progress'); ok(prog.includes('97') && prog.includes('CERT 7/8') && prog.includes('17/17'), 'progress: ' + prog.replace(/\s+/g, ' '));
+  const prog = await pg.textContent('#v-cl .progress'); ok(prog.includes('97') && prog.includes('CERT 7/8') && prog.includes('17/17') && prog.includes('screen photos 11/15'), 'progress: ' + prog.replace(/\s+/g, ' '));
   await pg.screenshot({ path: OUT + '/04_checklist.png' });
   // job photo
   await pg.click('#back'); await pg.click('[data-go=ph]'); await (await pg.$('#ph-shoot')).setInputFiles(S + '/photos/p10_80k.jpg'); await pg.click('#c-full');

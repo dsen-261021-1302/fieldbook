@@ -19,7 +19,7 @@ Open it once with signal after installing. After that it opens anywhere.
 1. **+ New job** → job #, site, assets, technician.
 2. **Work Order**: fill in the fields, the QTY / TYPE / DESCRIPTION rows and comments. The S.P.I. rep and the customer sign with a finger. These two signatures also print on every checklist.
 3. **+ Add checklist**: pick the checklist and the asset #. One checklist per asset.
-4. In each section: **Take photo** of that section's screen (or **Upload**). Drag the red corners to crop to the display, or **Use whole photo**. Add another photo when one screen doesn't show every setting.
+4. **Required screen photos** (top of the checklist): take each listed screen. Drag the red corners to crop to the display, or **Use whole photo**. Each row shows the TMEIC screen code and how to get there. Extra photos are optional: use **Extra photo** in any section, and add notes to any photo.
 5. Tick each line, add notes or settings, then tick **CERT** for the section yourself. "Mark all passed" never ticks CERT.
 6. **Photos** (on the job screen): damage, nameplates, site conditions.
 7. **Send PDF + CSV**. Send as often as you like. Each send is a complete copy of the whole job.
@@ -29,8 +29,8 @@ Photos are checked for blur, glare and darkness and saved at **80 kB or less** e
 
 ## What's in the files
 
-- **PDF**: the Work Order page (laid out like the Sure Power Work Order), then each checklist with a header on every page, PASS checkmarks, notes, CERT rows, readings, the section photos, comments and signatures, then the job photos. Every page has "page n of N" and the checklist pack version.
-- **CSV**: one row per Work Order field, checklist line (PASS / OPEN), reading, CERT and photo count, for Excel and the Trailer History Generator.
+- **PDF**: the Work Order page (laid out like the Sure Power Work Order), then each checklist with a header on every page, PASS checkmarks, notes, CERT rows, readings, comments and signatures. **Checklist pages carry no photos, so they look the same on every job.** All photos come last (printing optional): required screens in order, with any missing ones marked MISSING, then extra photos tagged to their section, then job photos. Page 1 says which pages are photos. Every page has "page n of N" and the pack version.
+- **CSV**: one row per Work Order field, checklist line (PASS / OPEN), reading, CERT, required screen photo (TAKEN / MISSING) and photo, for Excel and the Trailer History Generator.
 
 ## Privacy: important
 
@@ -46,7 +46,7 @@ Checklist content lives in `packs/` as data, so a new checklist is a new file, n
 
 | Pack | Checklist | Version |
 |---|---|---|
-| `g9k1m-sms` | G9K1M SMS Startup Checklist, Toshiba G9000 1000 kVA SMS | 1.0.0 (2026-10-26) |
+| `g9k1m-sms` | G9K1M SMS Startup Checklist, Toshiba G9000 1000 kVA SMS. 15 required screen photos (TMEIC L300 screen tree 3JAA0004) | 1.1.0 (2026-10-26) |
 
 Planned: G9000 225 / 500 kVA SMS, Toshiba standalone, Vertiv / NPower PM, load test.
 
@@ -55,6 +55,8 @@ Planned: G9000 225 / 500 kVA SMS, Toshiba standalone, Vertiv / NPower PM, load t
 Enter job # **LTCOLUMBO** to create a synthetic demo job (fake screens, fake readings). Automated test: `tests/e2e.js` (Playwright; run against a local server, `node tests/e2e.js <photo-folder> <out-folder>`; test photos are kept locally, never in this repo).
 
 ## Change log
+
+- **0.2.0 · 2026-10-26**: Photos moved out of the checklist pages to the end of the PDF (printing optional). Each pack lists its minimum required screen photos; Send warns about missing ones; the CSV lists each as TAKEN or MISSING. Photo notes print under the photo.
 
 - **0.1.0 · 2026-10-26**: First version. Jobs, Work Order with on-device signatures, G9K1M SMS startup checklist, per-section photos with crop and 80 kB compression, job photos, Send one PDF + one CSV, offline install, 7-day cleared-job restore, LTCOLUMBO demo.
 
