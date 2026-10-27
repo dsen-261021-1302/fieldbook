@@ -1,0 +1,21 @@
+const { chromium } = require('playwright');
+const [OUT, PH] = process.argv.slice(2);
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell' });
+  const pg = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })).newPage(); const errs = [];
+  pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
+  const ok = (c, m) => console.log((c ? 'PASS ' : 'FAIL ') + m);
+  await pg.goto('http://localhost:8765/'); await pg.click('#newJob'); await pg.fill('#n-job', 'LTCOLUMBO'); await pg.click('#n-go'); await pg.waitForSelector('#tiles', { timeout: 30000 });
+  await pg.click('[data-go=cl]'); await pg.waitForSelector('[data-rshoot="B0100"]');
+  await (await pg.$('[data-rshoot="B0100"]')).setInputFiles(PH + '/p02_80k.jpg'); await pg.click('#c-full'); await pg.waitForFunction(() => document.querySelectorAll('.req')[0].querySelectorAll('[data-ph]').length === 2, null, { timeout: 20000 });
+  ok(true, 'Main row shows both photos');
+  const second = (await pg.$$('.req'))[0]; const thumbs = await second.$$('[data-ph]'); await thumbs[1].click(); await pg.waitForSelector('#p-move');
+  const val = await pg.$eval('#p-move', s => [...s.options].find(o => o.text.includes('section 4.')).value); await pg.selectOption('#p-move', val); await pg.waitForTimeout(300); await pg.click('#sclose'); await pg.waitForTimeout(500);
+  ok(await pg.evaluate(() => document.querySelectorAll('.req')[0].querySelectorAll('[data-ph]').length) === 1, 'moved photo left Main');
+  ok((await pg.textContent('details[data-sec=other] .st')).trim() === '2', 'Other photos shows 2');
+  await pg.evaluate(() => document.querySelector('details[data-sec=other]').open = true);
+  const o = await pg.$$('details[data-sec=other] [data-ph]'); await o[0].click(); await pg.waitForSelector('#p-del'); await pg.click('#p-del'); await pg.click('#p-delyes'); await pg.waitForTimeout(500);
+  ok((await pg.textContent('details[data-sec=other] .st')).trim() === '1', 'deleted one from Other photos');
+  await pg.evaluate(() => document.querySelector('details[data-sec=other]').open = true); await pg.screenshot({ path: OUT + '/move.png' });
+  console.log('ERRORS', JSON.stringify(errs)); await b.close();
+})();

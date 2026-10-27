@@ -57,6 +57,8 @@ Enter job # **LTCOLUMBO** to create a synthetic demo job (fake screens, fake rea
 
 ## Change log
 
+- **0.2.2 · 2026-10-27**: Every photo of a required screen is shown (not just the first), so any can be opened and deleted. New **Other photos** list on each checklist. **Move to…** on every photo: another required screen, a section, or job photos.
+
 - **0.2.1 · 2026-10-26**: "Photos not permitted at this site" switch with a required reason (and optional who said so), shown on the Work Order page and in the CSV.
 
 - **0.2.0 · 2026-10-26**: Photos moved out of the checklist pages to the end of the PDF (printing optional). Each pack lists its minimum required screen photos; Send warns about missing ones; the CSV lists each as TAKEN or MISSING. Photo notes print under the photo.

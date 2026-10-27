@@ -24,7 +24,7 @@ const S = process.argv[2], OUT = process.argv[3];
   await pg.click('#back'); await pg.waitForSelector('#tiles');
   // add checklist
   await pg.click('[data-go=addcl]'); ok(await pg.inputValue('#a-asset') === 'TRL052', 'asset prefilled from WO'); await pg.click('#a-go'); await pg.waitForSelector('details.sec');
-  ok((await pg.$$('details.sec:not([data-sec=req])')).length === 9, '9 sections rendered');
+  ok((await pg.$$('details.sec:not([data-sec=req]):not([data-sec=other])')).length === 9, '9 sections rendered');
   ok((await pg.$$('[data-pass]')).length === 98, '98 lines rendered');
   // section 1: shoot big photo -> crop
   const fi = await pg.$('[data-rshoot="B0100"]'); await fi.setInputFiles(S + '/fbtest/big.jpg'); await pg.waitForSelector('#cbox');
