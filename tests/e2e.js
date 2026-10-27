@@ -47,7 +47,7 @@ const S = process.argv[2], OUT = process.argv[3];
   const rds = await pg.$$('[data-rd]'); for (let i = 0; i < rds.length; i++) await rds[i].fill(String(470 + i));
   await pg.fill('#cl-comments', 'Line 50 open: waiting on customer. Section 4 not certified.');
   await pg.waitForTimeout(600);
-  const prog = await pg.textContent('#v-cl .progress'); ok(prog.includes('97') && prog.includes('CERT 7/8') && prog.includes('17/17') && prog.includes('screen photos 11/15'), 'progress: ' + prog.replace(/\s+/g, ' '));
+  const prog = await pg.textContent('#v-cl .progress'); ok(prog.includes('97') && prog.includes('CERT 7/8') && prog.includes('17/17') && prog.includes('screen photos 11/16'), 'progress: ' + prog.replace(/\s+/g, ' '));
   await pg.screenshot({ path: OUT + '/04_checklist.png' });
   // job photo
   await pg.click('#back'); await pg.click('[data-go=ph]'); await (await pg.$('#ph-shoot')).setInputFiles(S + '/photos/p10_80k.jpg'); await pg.click('#c-full');

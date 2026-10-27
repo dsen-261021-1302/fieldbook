@@ -47,7 +47,7 @@ Checklist content lives in `packs/` as data, so a new checklist is a new file, n
 
 | Pack | Checklist | Version |
 |---|---|---|
-| `g9k1m-sms` | G9K1M SMS Startup Checklist, Toshiba G9000 1000 kVA SMS. 15 required screen photos (TMEIC L300 screen tree 3JAA0004) | 1.1.0 (2026-10-26) |
+| `g9k1m-sms` | G9K1M SMS Startup Checklist, Toshiba G9000 1000 kVA SMS. 16 required screen photos (TMEIC L300 screen tree 3JAA0004, plus UPS FPGA version) | 1.2.0 (2026-10-27) |
 
 Planned: G9000 225 / 500 kVA SMS, Toshiba standalone, Vertiv / NPower PM, load test.
 
@@ -56,6 +56,8 @@ Planned: G9000 225 / 500 kVA SMS, Toshiba standalone, Vertiv / NPower PM, load t
 Enter job # **LTCOLUMBO** to create a synthetic demo job (fake screens, fake readings). Automated test: `tests/e2e.js` (Playwright; run against a local server, `node tests/e2e.js <photo-folder> <out-folder>`; test photos are kept locally, never in this repo).
 
 ## Change log
+
+- **0.2.3 · 2026-10-27**: G9K1M pack 1.2.0 adds the required screen **Software Version (UPS FPGA)** (16 required screens).
 
 - **0.2.2 · 2026-10-27**: Every photo of a required screen is shown (not just the first), so any can be opened and deleted. New **Other photos** list on each checklist. **Move to…** on every photo: another required screen, a section, or job photos.
 

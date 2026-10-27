@@ -5,7 +5,7 @@
  "title": "G9K1M SMS Startup Checklist",
  "subtitle": "Toshiba G9000 1000kVA SMS",
  "kind": "startup",
- "packVersion": "1.1.0",
+ "packVersion": "1.2.0",
  "packDate": "2026-10-26",
  "source": "Toshiba Checklists Master File v1.3.0 (2026-10-05), SHA-256 5df1efb48a3084c21aa5d87c169a10c182721831c4989c7dde2bf207b9ceb6b9 — content extracted by script, not retyped",
  "ppe": "PPE REQUIRED: SAFETY GLASSES, EH SAFETY BOOTS, PROPER GLOVES, AND FLAME-RESISTANT UNIFORM",
@@ -594,6 +594,12 @@
     "id": "B0821",
     "name": "Software Version (UPS)",
     "path": "SOFTWARE VERSION → DETAIL",
+    "mode": "Maintenance mode"
+   },
+   {
+    "id": "B0821-FPGA",
+    "name": "Software Version (UPS FPGA)",
+    "path": "SOFTWARE VERSION → DETAIL, then tap SH to switch to FPGA",
     "mode": "Maintenance mode"
    },
    {
